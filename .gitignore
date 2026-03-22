@@ -1,0 +1,45 @@
+node_modules
+.env
+.env.local
+.env.*.local
+
+# Expo
+.expo
+dist
+.env.production
+
+# iOS
+ios/Pods
+ios/Pods.lock
+ios/build
+ios/.xcode.env.local
+*.xcworkspace
+
+# Android
+android/.gradle
+android/.android
+android/build
+android/app/build
+android/.idea
+
+# IDEs
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Testing
+coverage
+.jest
+
+# Misc
+.cache
+
