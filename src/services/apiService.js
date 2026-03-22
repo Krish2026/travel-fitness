@@ -81,11 +81,7 @@ const API = {
 
     addLesson: async (trainerUid, courseId, lessonData) => {
       try {
-        return await courseService.addLesson(
-          trainerUid,
-          courseId,
-          lessonData,
-        );
+        return await courseService.addLesson(trainerUid, courseId, lessonData);
       } catch (err) {
         throw handleError(err, "Failed to add lesson");
       }
