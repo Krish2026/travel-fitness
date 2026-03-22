@@ -13,6 +13,7 @@ ios/Pods
 ios/Pods.lock
 ios/build
 ios/.xcode.env.local
+ios/GoogleService-Info.plist
 *.xcworkspace
 
 # Android
@@ -20,6 +21,7 @@ android/.gradle
 android/.android
 android/build
 android/app/build
+android/app/google-services.json
 android/.idea
 
 # IDEs
