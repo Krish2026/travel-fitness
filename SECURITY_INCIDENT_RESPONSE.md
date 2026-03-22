@@ -6,9 +6,10 @@ Your `GoogleService-Info.plist` (iOS) was pushed to GitHub containing sensitive 
 
 ✅ Removed `GoogleService-Info.plist` from git tracking
 ✅ Updated `.gitignore` to prevent future commits:
-  - `ios/GoogleService-Info.plist`
-  - `android/app/google-services.json`
-✅ Committed these changes
+
+- `ios/GoogleService-Info.plist`
+- `android/app/google-services.json`
+  ✅ Committed these changes
 
 ## ⚠️ IMPORTANT: Invalidate Your Credentials
 
@@ -54,12 +55,14 @@ git push
 ## 🛡️ Prevent This in the Future
 
 **Files that should NEVER be committed:**
+
 - ✅ `.env` (already in .gitignore)
 - ✅ `GoogleService-Info.plist` (now in .gitignore)
 - ✅ `google-services.json` (now in .gitignore)
 - ✅ Any config files with API keys
 
 **Safe to commit:**
+
 - `.env.example` (template with placeholders)
 - Configuration guides & documentation
 
@@ -70,11 +73,12 @@ git push
 When other developers clone your repo, they should:
 
 1. Copy from example files:
+
    ```bash
    # For Firebase iOS
    cp .env.example .env
    # Then edit with their credentials
-   
+
    # Download from Firebase Console
    # Place GoogleService-Info.plist in ios/
    # Place google-services.json in android/app/
@@ -87,6 +91,7 @@ When other developers clone your repo, they should:
 ## ⚠️ GitHub & Google Are Scanning
 
 GitHub automatically scans for leaked secrets. Check:
+
 - https://github.com/your-repo/security/secret-scanning
 
 Google Firebase also monitors for exposed keys and may disable them automatically.

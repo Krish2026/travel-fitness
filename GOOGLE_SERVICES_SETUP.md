@@ -5,6 +5,7 @@ This guide explains how to add Google Services configuration files to your local
 ## ⚠️ Important: Never Commit These Files
 
 The following files contain sensitive credentials and are **blocked by .gitignore**:
+
 - `ios/GoogleService-Info.plist`
 - `android/app/google-services.json`
 
