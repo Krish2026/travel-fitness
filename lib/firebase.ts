@@ -550,6 +550,180 @@ export async function getCalendarEventsForUser(userId: string) {
   return snap.docs.map((doc) => doc.data());
 }
 
+// Health Entry Functions
+export async function createHealthEntry(
+  userId: string,
+  data: {
+    type: "weight" | "measurement";
+    weight?: { value: number; unit: "kg" | "lbs" };
+    measurement?: {
+      type: "chest" | "waist" | "hips" | "arms" | "thighs";
+      value: number;
+      unit: "cm" | "in";
+    };
+    notes?: string;
+  },
+): Promise<void> {
+  const entryRef = doc(collection(db, "health_entries"));
+  await setDoc(entryRef, {
+    id: entryRef.id,
+    userId,
+    type: data.type,
+    weight: data.weight,
+    measurement: data.measurement,
+    notes: data.notes,
+    date: new Date(),
+  });
+}
+
+export async function getHealthEntriesForUser(userId: string) {
+  const q = query(
+    collection(db, "health_entries"),
+    where("userId", "==", userId),
+    orderBy("date", "desc"),
+  );
+  const snap = await getDocs(q);
+  return snap.docs.map((doc) => doc.data());
+}
+
+// Course Enrollment Functions
+export async function enrollCourse(
+  userId: string,
+  courseId: string,
+): Promise<void> {
+  const enrollmentRef = doc(collection(db, "enrollments"));
+  await setDoc(enrollmentRef, {
+    id: enrollmentRef.id,
+    userId,
+    courseId,
+    enrolledAt: new Date(),
+    progress: 0,
+    completedLessons: [],
+  });
+}
+
+export async function getUserCourseEnrollments(userId: string) {
+  const q = query(
+    collection(db, "enrollments"),
+    where("userId", "==", userId),
+  );
+  const snap = await getDocs(q);
+  return snap.docs.map((doc) => doc.data());
+}
+
+export async function getAllCourses() {
+  const q = query(collection(db, "courses"));
+  const snap = await getDocs(q);
+  return snap.docs.map((doc) => doc.data());
+}
+
+// Posts Feed Functions
+export async function getPostsFeed(limit: number = 20) {
+  const q = query(
+    collection(db, "posts"),
+    orderBy("createdAt", "desc"),
+    firestoreLimit(limit),
+  );
+  try {
+    const snap = await getDocs(q);
+    return snap.docs.map((doc) => doc.data());
+  } catch {
+    // Fallback if orderBy fails
+    const allRef = collection(db, "posts");
+    const allSnap = await getDocs(allRef);
+    return allSnap.docs
+      .map((doc) => doc.data())
+      .sort(
+        (a: any, b: any) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      )
+      .slice(0, limit);
+  }
+}
+
+// Profile Update Functions
+export async function updateUserProfile(
+  userId: string,
+  data: {
+    name?: string;
+    bio?: string;
+    age?: number;
+    height?: number;
+    heightUnit?: "cm" | "ft";
+    fitnessLevel?: "beginner" | "intermediate" | "advanced";
+    specialties?: string[];
+    profilePicture?: string;
+    goals?: string[];
+  },
+): Promise<void> {
+  const clientRef = doc(db, "clients", userId);
+  const trainerRef = doc(db, "trainers", userId);
+
+  // Try to update client profile first, then trainer
+  try {
+    await setDoc(clientRef, data, { merge: true });
+  } catch {
+    try {
+      await setDoc(trainerRef, data, { merge: true });
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      throw error;
+    }
+  }
+}
+
+// Progress/Stats Functions
+export async function getProgressData(userId: string) {
+  // Get health entries
+  const healthEntriesRef = query(
+    collection(db, "health_entries"),
+    where("userId", "==", userId),
+  );
+  const healthSnap = await getDocs(healthEntriesRef);
+  const healthEntries = healthSnap.docs.map((doc) => doc.data());
+
+  // Get enrollments
+  const enrollmentsRef = query(
+    collection(db, "enrollments"),
+    where("userId", "==", userId),
+  );
+  const enrollSnap = await getDocs(enrollmentsRef);
+  const enrollments = enrollSnap.docs.map((doc) => doc.data());
+
+  return {
+    healthEntries,
+    enrollments,
+    statistics: {
+      totalHealthEntries: healthEntries.length,
+      totalCoursesEnrolled: enrollments.length,
+      completedCourses: enrollments.filter((e: any) => e.progress >= 100)
+        .length,
+    },
+  };
+}
+
+// Trainer Settings Functions
+export async function updateTrainerSettings(
+  trainerId: string,
+  data: {
+    isChatEnabled?: boolean;
+    themeColor?: string;
+    notifications?: {
+      newMessages?: boolean;
+      courseEnrollments?: boolean;
+    };
+  },
+): Promise<void> {
+  const settingsRef = doc(db, "trainer_settings", trainerId);
+  await setDoc(settingsRef, data, { merge: true });
+}
+
+export async function getTrainerSettings(trainerId: string) {
+  const settingsRef = doc(db, "trainer_settings", trainerId);
+  const snap = await getDoc(settingsRef);
+  return snap.exists() ? snap.data() : null;
+}
+
 // Admin Functions (for testing)
 export async function getAllUsers() {
   const clientsRef = collection(db, "clients");

@@ -6,58 +6,61 @@ import {
   Pressable,
   ActivityIndicator,
   Alert,
-  FlatList,
 } from "react-native";
 import { useState, useEffect, useCallback } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 import { theme } from "@/theme";
 import { useAuthStore } from "@/store/authStore";
-import { getPostsForTrainer } from "@/lib/firebase";
+import { getPostsFeed, getPostsForTrainer } from "@/lib/firebase";
 import { Post } from "@/lib/types";
-import { Button } from "@/components/Button";
-
-interface CreatePostModalProps {
-  visible: boolean;
-  onClose: () => void;
-  onSuccess?: () => void;
-}
-
-const CreatePostModal = ({ visible, onClose }: CreatePostModalProps) => (
-  <View style={{ display: visible ? "flex" : "none" }} />
-);
+import Button from "@/components/Button";
+import CreatePostModal from "@/components/CreatePostModal";
 
 export default function PostsFeedScreen() {
-  const { user } = useAuthStore();
+  const { user, userProfile } = useAuthStore();
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedTab, setSelectedTab] = useState<"feed" | "my-posts">(
-    user?.role === "trainer" ? "my-posts" : "feed",
+    userProfile?.role === "trainer" ? "my-posts" : "feed",
   );
 
   const loadPosts = useCallback(async () => {
     try {
       setIsLoading(true);
-      if (user?.id) {
-        const userPosts = await getPostsForTrainer(user.id);
-        setPosts(userPosts as Post[]);
+      if (!user?.id) return;
+
+      let allPosts: Post[] = [];
+      if (selectedTab === "feed") {
+        // Load all posts
+        allPosts = (await getPostsFeed()) as Post[];
+      } else {
+        // Load trainer's posts
+        allPosts = (await getPostsForTrainer(user.id)) as Post[];
       }
+      setPosts(allPosts);
     } catch (error) {
       console.error("Error loading posts:", error);
       Alert.alert("Error", "Failed to load posts");
     } finally {
       setIsLoading(false);
     }
-  }, [user?.id]);
+  }, [user?.id, selectedTab]);
 
   useFocusEffect(
     useCallback(() => {
       loadPosts();
-    }, [loadPosts]),
+    }, [selectedTab, loadPosts]),
   );
 
   const handlePostSuccess = () => {
     loadPosts();
+  };
+
+  const categoryColors = {
+    tip: theme.colors.primary,
+    motivation: "#FF6B6B",
+    update: "#4ECDC4",
   };
 
   const renderPostCard = (post: Post) => (
@@ -66,18 +69,24 @@ export default function PostsFeedScreen() {
       <View style={styles.postHeader}>
         <View style={styles.posterInfo}>
           <View style={styles.avatar}>
-            <Text style={styles.avatarText}>T</Text>
+            <Text style={styles.avatarText}>
+              {post.trainerName?.charAt(0).toUpperCase() || "T"}
+            </Text>
           </View>
           <View style={styles.posterDetails}>
-            <Text style={styles.posterName}>Trainer</Text>
-            <Text style={styles.postTime}>Today</Text>
+            <Text style={styles.posterName}>{post.trainerName || "Trainer"}</Text>
+            <Text style={styles.postTime}>
+              {new Date(post.createdAt).toLocaleDateString()}
+            </Text>
           </View>
         </View>
         <View
           style={[
             styles.categoryBadge,
             {
-              backgroundColor: theme.colors.primary + "20",
+              backgroundColor:
+                categoryColors[post.category as keyof typeof categoryColors] +
+                "20",
             },
           ]}
         >
@@ -85,21 +94,22 @@ export default function PostsFeedScreen() {
             style={[
               styles.categoryBadgeText,
               {
-                color: theme.colors.primary,
+                color:
+                  categoryColors[post.category as keyof typeof categoryColors],
               },
             ]}
           >
-            POST
+            {post.category?.toUpperCase()}
           </Text>
         </View>
       </View>
 
       {/* Title */}
-      <Text style={styles.postTitle}>{post.id}</Text>
+      <Text style={styles.postTitle}>{post.title}</Text>
 
       {/* Content */}
       <Text style={styles.postContent} numberOfLines={4}>
-        Check back soon for posts
+        {post.content}
       </Text>
 
       {/* Actions */}

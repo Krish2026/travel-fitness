@@ -10,6 +10,7 @@ import {
 import { useState, useEffect } from "react";
 import { theme } from "@/theme";
 import { useAuthStore } from "@/store/authStore";
+import { getProgressData } from "@/lib/firebase";
 
 export default function ProgressScreen() {
   const { user } = useAuthStore();
@@ -17,22 +18,64 @@ export default function ProgressScreen() {
   const [selectedMetric, setSelectedMetric] = useState<
     "weight" | "measurements" | "courses"
   >("weight");
+  const [progressData, setProgressData] = useState<any>(null);
   const [stats, setStats] = useState({
     currentWeight: 75,
     goalWeight: 70,
     weightChange: -2.5,
-    coursesCompleted: 3,
-    coursesEnrolled: 5,
-    lessonsCompleted: 15,
-    totalLessons: 45,
-    streakDays: 7,
+    coursesCompleted: 0,
+    coursesEnrolled: 0,
+    lessonsCompleted: 0,
+    totalLessons: 0,
+    streakDays: 0,
     lastEntryDate: new Date(),
   });
 
   useEffect(() => {
-    // TODO: Load progress data from Firebase
-    setIsLoading(false);
+    loadProgressData();
   }, [user?.id]);
+
+  const loadProgressData = async () => {
+    try {
+      if (!user?.id) return;
+      const data = await getProgressData(user.id);
+      setProgressData(data);
+
+      // Calculate stats from health entries
+      if (data.healthEntries && data.healthEntries.length > 0) {
+        const weightEntries = data.healthEntries.filter(
+          (e: any) => e.type === "weight",
+        );
+        if (weightEntries.length > 0) {
+          const latestWeight = weightEntries[0].weight.value;
+          const oldestWeight =
+            weightEntries[weightEntries.length - 1].weight.value;
+          setStats((prev) => ({
+            ...prev,
+            currentWeight: latestWeight,
+            weightChange: oldestWeight - latestWeight,
+            lastEntryDate: new Date(weightEntries[0].date),
+          }));
+        }
+      }
+
+      // Calculate course stats
+      if (data.enrollments) {
+        const completedCourses = data.enrollments.filter(
+          (e: any) => e.progress >= 100,
+        ).length;
+        setStats((prev) => ({
+          ...prev,
+          coursesEnrolled: data.enrollments.length,
+          coursesCompleted: completedCourses,
+        }));
+      }
+    } catch (error) {
+      console.error("Error loading progress data:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   if (isLoading) {
     return (

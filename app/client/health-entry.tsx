@@ -13,7 +13,8 @@ import {
 import { useState, useEffect } from "react";
 import { theme } from "@/theme";
 import { useAuthStore } from "@/store/authStore";
-import { Button } from "@/components/Button";
+import { createHealthEntry, getHealthEntriesForUser } from "@/lib/firebase";
+import Button from "@/components/Button";
 
 export default function HealthEntryScreen() {
   const { user } = useAuthStore();
@@ -33,9 +34,20 @@ export default function HealthEntryScreen() {
   const [entries, setEntries] = useState<any[]>([]);
 
   useEffect(() => {
-    // TODO: Load previous entries from Firebase
-    setIsLoading(false);
+    loadEntries();
   }, [user?.id]);
+
+  const loadEntries = async () => {
+    try {
+      if (!user?.id) return;
+      const userEntries = await getHealthEntriesForUser(user.id);
+      setEntries(userEntries);
+    } catch (error) {
+      console.error("Error loading entries:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleSubmit = async () => {
     try {
@@ -48,22 +60,31 @@ export default function HealthEntryScreen() {
         return;
       }
 
+      if (!user?.id) {
+        Alert.alert("Error", "User not authenticated");
+        return;
+      }
+
       setIsSaving(true);
 
-      // TODO: Save to Firebase
-      // const entry = {
-      //   userId: user?.id,
-      //   type: entryType,
-      //   weight: entryType === 'weight' ? { value: weight, unit: weightUnit } : undefined,
-      //   measurement: entryType === 'measurement' ? {
-      //     type: measurementType,
-      //     value: measurement,
-      //     unit: measurementUnit
-      //   } : undefined,
-      //   notes: notes.trim(),
-      //   date: new Date(),
-      // };
-      // await createHealthEntry(entry);
+      const entryData =
+        entryType === "weight"
+          ? {
+              type: "weight" as const,
+              weight: { value: parseFloat(weight), unit: weightUnit },
+              notes: notes.trim(),
+            }
+          : {
+              type: "measurement" as const,
+              measurement: {
+                type: measurementType,
+                value: parseFloat(measurement),
+                unit: measurementUnit,
+              },
+              notes: notes.trim(),
+            };
+
+      await createHealthEntry(user.id, entryData);
 
       Alert.alert("Success", "Health entry saved!");
       // Reset form
@@ -71,6 +92,7 @@ export default function HealthEntryScreen() {
       setMeasurement("");
       setNotes("");
       // Reload entries
+      await loadEntries();
     } catch (error) {
       console.error("Error saving entry:", error);
       Alert.alert("Error", "Failed to save health entry");

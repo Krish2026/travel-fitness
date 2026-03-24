@@ -11,9 +11,11 @@ import {
 import { useState, useEffect } from "react";
 import { theme } from "@/theme";
 import { useAuthStore } from "@/store/authStore";
-import { Button } from "@/components/Button";
+import { updateTrainerSettings } from "@/lib/firebase";
+import Button from "@/components/Button";
 
 export default function TrainerSettingsScreen() {
+  const { user } = useAuthStore();
   const [isChatEnabled, setIsChatEnabled] = useState(true);
   const [selectedTheme, setSelectedTheme] = useState<string>("red");
   const [isSaving, setIsSaving] = useState(false);
@@ -28,12 +30,20 @@ export default function TrainerSettingsScreen() {
 
   const handleSaveSettings = async () => {
     try {
+      if (!user?.id) {
+        Alert.alert("Error", "User not authenticated");
+        return;
+      }
+
       setIsSaving(true);
-      // TODO: Save settings to Firebase
-      // await updateTrainerSettings(user?.id, {
-      //   isChatEnabled,
-      //   themeColor: selectedTheme
-      // });
+      await updateTrainerSettings(user.id, {
+        isChatEnabled,
+        themeColor: selectedTheme,
+        notifications: {
+          newMessages: true,
+          courseEnrollments: true,
+        },
+      });
       Alert.alert("Success", "Settings saved!");
     } catch (error) {
       console.error("Error saving settings:", error);

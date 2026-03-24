@@ -13,6 +13,7 @@ import {
 import { useState, useEffect } from "react";
 import { theme } from "@/theme";
 import { useAuthStore } from "@/store/authStore";
+import { updateUserProfile } from "@/lib/firebase";
 import { Button } from "@/components/Button";
 
 export default function EditProfileScreen() {
@@ -56,23 +57,29 @@ export default function EditProfileScreen() {
         return;
       }
 
+      if (!user?.id) {
+        Alert.alert("Error", "User not authenticated");
+        return;
+      }
+
       setIsSaving(true);
 
-      // TODO: Update profile in Firebase
-      // const profileData = isTrainer ? {
-      //   name: name.trim(),
-      //   bio: bio.trim(),
-      //   specialties,
-      // } : {
-      //   name: name.trim(),
-      //   height: parseInt(height),
-      //   heightUnit,
-      //   age: parseInt(age),
-      //   fitnessLevel,
-      //   goals,
-      // };
-      // await updateUserProfile(user?.id, profileData);
+      const profileData = isTrainer
+        ? {
+            name: name.trim(),
+            bio: bio.trim(),
+            specialties,
+          }
+        : {
+            name: name.trim(),
+            height: parseInt(height),
+            heightUnit,
+            age: parseInt(age),
+            fitnessLevel,
+            goals,
+          };
 
+      await updateUserProfile(user.id, profileData);
       Alert.alert("Success", "Profile updated successfully!");
     } catch (error) {
       console.error("Error saving profile:", error);

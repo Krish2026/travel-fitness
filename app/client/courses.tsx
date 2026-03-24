@@ -11,9 +11,9 @@ import { useState, useEffect } from "react";
 import { useRouter } from "expo-router";
 import { theme } from "@/theme";
 import { useAuthStore } from "@/store/authStore";
-import { getCourse, getCoursesForTrainer } from "@/lib/firebase";
+import { getAllCourses, enrollCourse } from "@/lib/firebase";
 import { Course } from "@/lib/types";
-import { Button } from "@/components/Button";
+import Button from "@/components/Button";
 
 export default function CoursesScreen() {
   const router = useRouter();
@@ -30,24 +30,24 @@ export default function CoursesScreen() {
   ];
 
   useEffect(() => {
-    const loadCourses = async () => {
-      try {
-        // In a real app, this would fetch all courses from all trainers
-        // For now, we'll fetch from a specific trainer or implement getAllCourses
-        // TODO: Implement getAllCourses function in firebase.ts
-        setCourses([]);
-      } catch (error) {
-        console.error("Error loading courses:", error);
-        Alert.alert("Error", "Failed to load courses");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     loadCourses();
   }, []);
 
-  const handleEnrollCourse = (courseId: string) => {
+  const loadCourses = async () => {
+    try {
+      setIsLoading(true);
+      const allCourses = await getAllCourses();
+      setCourses(allCourses as Course[]);
+    } catch (error) {
+      console.error("Error loading courses:", error);
+      Alert.alert("Error", "Failed to load courses");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleEnrollCourse = async (courseId: string) => {
+    const { user } = useAuthStore();
     Alert.alert(
       "Enroll Course",
       "Are you sure you want to enroll in this course?",
@@ -55,16 +55,25 @@ export default function CoursesScreen() {
         { text: "Cancel", style: "cancel" },
         {
           text: "Enroll",
-          onPress: () => {
-            // TODO: Implement course enrollment
-            Alert.alert("Success", "You're enrolled in the course!");
-            router.push({
-              pathname: "/client/lesson-detail",
-              params: {
-                courseId,
-                lessonIndex: "0",
-              },
-            });
+          onPress: async () => {
+            try {
+              if (!user?.id) {
+                Alert.alert("Error", "User not authenticated");
+                return;
+              }
+              await enrollCourse(user.id, courseId);
+              Alert.alert("Success", "You're enrolled in the course!");
+              router.push({
+                pathname: "/client/lesson-detail",
+                params: {
+                  courseId,
+                  lessonIndex: "0",
+                },
+              });
+            } catch (error) {
+              console.error("Error enrolling course:", error);
+              Alert.alert("Error", "Failed to enroll in course");
+            }
           },
         },
       ],
