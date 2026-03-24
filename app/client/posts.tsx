@@ -13,16 +13,16 @@ import { theme } from "@/theme";
 import { useAuthStore } from "@/store/authStore";
 import { getPostsFeed, getPostsForTrainer } from "@/lib/firebase";
 import { Post } from "@/lib/types";
-import Button from "@/components/Button";
-import CreatePostModal from "@/components/CreatePostModal";
+import { Button } from "@/components/Button";
+import CreatePostModal from "@/app/components/CreatePostModal";
 
 export default function PostsFeedScreen() {
-  const { user, userProfile } = useAuthStore();
+  const { user } = useAuthStore();
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedTab, setSelectedTab] = useState<"feed" | "my-posts">(
-    userProfile?.role === "trainer" ? "my-posts" : "feed",
+    user?.role === "trainer" ? "my-posts" : "feed",
   );
 
   const loadPosts = useCallback(async () => {
@@ -58,9 +58,9 @@ export default function PostsFeedScreen() {
   };
 
   const categoryColors = {
-    tip: theme.colors.primary,
-    motivation: "#FF6B6B",
-    update: "#4ECDC4",
+    video: theme.colors.primary,
+    image: "#FF6B6B",
+    text: "#4ECDC4",
   };
 
   const renderPostCard = (post: Post) => (
@@ -69,14 +69,12 @@ export default function PostsFeedScreen() {
       <View style={styles.postHeader}>
         <View style={styles.posterInfo}>
           <View style={styles.avatar}>
-            <Text style={styles.avatarText}>
-              {post.trainerName?.charAt(0).toUpperCase() || "T"}
-            </Text>
+            <Text style={styles.avatarText}>T</Text>
           </View>
           <View style={styles.posterDetails}>
-            <Text style={styles.posterName}>{post.trainerName || "Trainer"}</Text>
+            <Text style={styles.posterName}>Trainer</Text>
             <Text style={styles.postTime}>
-              {new Date(post.createdAt).toLocaleDateString()}
+              {new Date(post.timestamp).toLocaleDateString()}
             </Text>
           </View>
         </View>
@@ -85,8 +83,7 @@ export default function PostsFeedScreen() {
             styles.categoryBadge,
             {
               backgroundColor:
-                categoryColors[post.category as keyof typeof categoryColors] +
-                "20",
+                categoryColors[post.type as keyof typeof categoryColors] + "20",
             },
           ]}
         >
@@ -94,18 +91,17 @@ export default function PostsFeedScreen() {
             style={[
               styles.categoryBadgeText,
               {
-                color:
-                  categoryColors[post.category as keyof typeof categoryColors],
+                color: categoryColors[post.type as keyof typeof categoryColors],
               },
             ]}
           >
-            {post.category?.toUpperCase()}
+            {post.type?.toUpperCase()}
           </Text>
         </View>
       </View>
 
-      {/* Title */}
-      <Text style={styles.postTitle}>{post.title}</Text>
+      {/* Caption */}
+      {post.caption && <Text style={styles.postTitle}>{post.caption}</Text>}
 
       {/* Content */}
       <Text style={styles.postContent} numberOfLines={4}>

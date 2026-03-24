@@ -24,8 +24,10 @@ import {
   signup,
   signupNewClient,
   signupNewTrainer,
+  uploadProfilePicture,
 } from "@/lib/firebase";
 import { useAuthStore } from "@/store/authStore";
+import ProfilePicturePicker from "@/components/ProfilePicturePicker";
 
 const SPECIALTIES = [
   "Strength Training",
@@ -228,6 +230,32 @@ export default function CreateProfileScreen() {
     }
   };
 
+  const handleProfileImageSelected = async (croppedImageUri: string) => {
+    try {
+      // Get the current user ID (will be null for new signups)
+      const userId = auth.currentUser?.uid;
+
+      // For new signups, we'll just store the URI and upload after user is created
+      // For existing users, upload immediately
+      if (userId) {
+        setIsLoading(true);
+        // Upload the image to Firebase Storage
+        const downloadUrl = await uploadProfilePicture(userId, croppedImageUri);
+        setProfilePicture(downloadUrl);
+        setIsLoading(false);
+        Alert.alert("Success", "Profile picture updated successfully");
+      } else {
+        // For new signups, store the URI and it will be uploaded after user creation if needed
+        setProfilePicture(croppedImageUri);
+      }
+    } catch (error) {
+      setIsLoading(false);
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to upload image";
+      Alert.alert("Error", errorMessage);
+    }
+  };
+
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <View style={styles.header}>
@@ -238,6 +266,13 @@ export default function CreateProfileScreen() {
       </View>
 
       <View style={styles.form}>
+        {/* Profile Picture */}
+        <ProfilePicturePicker
+          onImageSelected={handleProfileImageSelected}
+          currentImage={profilePicture}
+          label="Profile Picture"
+        />
+
         {/* Name Input */}
         <View style={styles.inputContainer}>
           <Text style={styles.label}>Full Name</Text>

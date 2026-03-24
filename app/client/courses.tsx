@@ -13,7 +13,7 @@ import { theme } from "@/theme";
 import { useAuthStore } from "@/store/authStore";
 import { getAllCourses, enrollCourse } from "@/lib/firebase";
 import { Course } from "@/lib/types";
-import Button from "@/components/Button";
+import { Button } from "@/components/Button";
 
 export default function CoursesScreen() {
   const router = useRouter();

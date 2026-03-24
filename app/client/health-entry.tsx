@@ -13,8 +13,13 @@ import {
 import { useState, useEffect } from "react";
 import { theme } from "@/theme";
 import { useAuthStore } from "@/store/authStore";
-import { createHealthEntry, getHealthEntriesForUser } from "@/lib/firebase";
-import Button from "@/components/Button";
+import {
+  createHealthEntry,
+  getHealthEntriesForUser,
+  uploadHealthEntryPhoto,
+} from "@/lib/firebase";
+import { Button } from "@/components/Button";
+import MediaPicker from "@/components/MediaPicker";
 
 export default function HealthEntryScreen() {
   const { user } = useAuthStore();
@@ -32,6 +37,7 @@ export default function HealthEntryScreen() {
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [entries, setEntries] = useState<any[]>([]);
+  const [selectedImage, setSelectedImage] = useState("");
 
   useEffect(() => {
     loadEntries();
@@ -67,12 +73,34 @@ export default function HealthEntryScreen() {
 
       setIsSaving(true);
 
+      // Generate a unique entry ID for the photo if one is selected
+      const entryId = `entry_${Date.now()}`;
+      let photoUrl = "";
+
+      // Upload photo if one is selected
+      if (selectedImage) {
+        try {
+          photoUrl = await uploadHealthEntryPhoto(
+            user.id,
+            entryId,
+            selectedImage,
+          );
+        } catch (error) {
+          console.error("Error uploading photo:", error);
+          Alert.alert(
+            "Warning",
+            "Failed to upload photo. Entry will be saved without photo.",
+          );
+        }
+      }
+
       const entryData =
         entryType === "weight"
           ? {
               type: "weight" as const,
               weight: { value: parseFloat(weight), unit: weightUnit },
               notes: notes.trim(),
+              photoUrl: photoUrl || undefined,
             }
           : {
               type: "measurement" as const,
@@ -82,6 +110,7 @@ export default function HealthEntryScreen() {
                 unit: measurementUnit,
               },
               notes: notes.trim(),
+              photoUrl: photoUrl || undefined,
             };
 
       await createHealthEntry(user.id, entryData);
@@ -91,6 +120,7 @@ export default function HealthEntryScreen() {
       setWeight("");
       setMeasurement("");
       setNotes("");
+      setSelectedImage("");
       // Reload entries
       await loadEntries();
     } catch (error) {
@@ -284,6 +314,16 @@ export default function HealthEntryScreen() {
 
         {/* Notes */}
         <View style={styles.form}>
+          {/* Media Picker */}
+          <MediaPicker
+            onImageSelected={setSelectedImage}
+            selectedImage={selectedImage}
+            onRemove={() => setSelectedImage("")}
+            label="Attach Photo (Optional)"
+            placeholderText="Tap to add a progress photo"
+            aspectRatio={4 / 3}
+          />
+
           <View style={styles.formGroup}>
             <Text style={styles.label}>Notes (Optional)</Text>
             <TextInput

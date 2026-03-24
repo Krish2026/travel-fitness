@@ -12,7 +12,7 @@ import { useState, useEffect } from "react";
 import { theme } from "@/theme";
 import { useAuthStore } from "@/store/authStore";
 import { updateTrainerSettings } from "@/lib/firebase";
-import Button from "@/components/Button";
+import { Button } from "@/components/Button";
 
 export default function TrainerSettingsScreen() {
   const { user } = useAuthStore();

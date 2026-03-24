@@ -14,8 +14,9 @@ import {
 import { useState } from "react";
 import { theme } from "@/theme";
 import { useAuthStore } from "@/store/authStore";
-import { createPost } from "@/lib/firebase";
+import { createPost, uploadPostMedia } from "@/lib/firebase";
 import { Button } from "@/components/Button";
+import MediaPicker from "@/components/MediaPicker";
 
 interface CreatePostModalProps {
   visible: boolean;
@@ -34,6 +35,7 @@ export default function CreatePostModal({
   const [category, setCategory] = useState<"tip" | "motivation" | "update">(
     "tip",
   );
+  const [selectedImage, setSelectedImage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const categories = ["tip", "motivation", "update"] as const;
@@ -47,10 +49,25 @@ export default function CreatePostModal({
     try {
       setIsSubmitting(true);
 
+      let mediaUrl = "";
+
+      // Upload image if one is selected
+      if (selectedImage) {
+        try {
+          mediaUrl = await uploadPostMedia(user.id, selectedImage, "image");
+        } catch (error) {
+          console.error("Error uploading image:", error);
+          Alert.alert(
+            "Error",
+            "Failed to upload image. Post created without image.",
+          );
+        }
+      }
+
       await createPost(user.id || "", {
-        type: "text",
+        type: selectedImage ? "image" : "text",
         content: `${title}\n\n${content}`,
-        media: [],
+        media: mediaUrl ? [{ url: mediaUrl, type: "image" as const }] : [],
         hashtags: [],
         taggedUsers: [],
       });
@@ -59,6 +76,7 @@ export default function CreatePostModal({
       setTitle("");
       setContent("");
       setCategory("tip");
+      setSelectedImage("");
       onClose();
       onSuccess?.();
     } catch (error) {
@@ -150,6 +168,16 @@ export default function CreatePostModal({
                 ))}
               </View>
             </View>
+
+            {/* Media Picker */}
+            <MediaPicker
+              onImageSelected={setSelectedImage}
+              selectedImage={selectedImage}
+              onRemove={() => setSelectedImage("")}
+              label="Attach Image (Optional)"
+              placeholderText="Tap to add an image to your post"
+              aspectRatio={16 / 9}
+            />
 
             {/* Preview */}
             <View style={styles.previewSection}>

@@ -26,6 +26,7 @@ import {
   ref,
   uploadBytes,
   getDownloadURL,
+  deleteObject,
   FirebaseStorage,
 } from "firebase/storage";
 
@@ -323,6 +324,36 @@ export async function uploadPostMedia(
   }
 }
 
+export async function uploadHealthEntryPhoto(
+  userId: string,
+  entryId: string,
+  imageUri: string,
+): Promise<string> {
+  try {
+    const response = await fetch(imageUri);
+    const blob = await response.blob();
+
+    const storageRef = ref(storage, `health_entries/${userId}/${entryId}`);
+    await uploadBytes(storageRef, blob);
+
+    const url = await getDownloadURL(storageRef);
+    return url;
+  } catch (error) {
+    console.error("Error uploading health entry photo:", error);
+    throw error;
+  }
+}
+
+export async function deleteImage(storagePath: string): Promise<void> {
+  try {
+    const fileRef = ref(storage, storagePath);
+    await deleteObject(fileRef);
+  } catch (error) {
+    console.error("Error deleting image:", error);
+    throw error;
+  }
+}
+
 // Course Functions
 export async function createCourse(
   trainerId: string,
@@ -603,10 +634,7 @@ export async function enrollCourse(
 }
 
 export async function getUserCourseEnrollments(userId: string) {
-  const q = query(
-    collection(db, "enrollments"),
-    where("userId", "==", userId),
-  );
+  const q = query(collection(db, "enrollments"), where("userId", "==", userId));
   const snap = await getDocs(q);
   return snap.docs.map((doc) => doc.data());
 }

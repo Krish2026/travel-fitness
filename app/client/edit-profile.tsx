@@ -13,8 +13,9 @@ import {
 import { useState, useEffect } from "react";
 import { theme } from "@/theme";
 import { useAuthStore } from "@/store/authStore";
-import { updateUserProfile } from "@/lib/firebase";
+import { updateUserProfile, uploadProfilePicture } from "@/lib/firebase";
 import { Button } from "@/components/Button";
+import ProfilePicturePicker from "@/components/ProfilePicturePicker";
 
 export default function EditProfileScreen() {
   const { user } = useAuthStore();
@@ -34,10 +35,15 @@ export default function EditProfileScreen() {
   const [height, setHeight] = useState(!isTrainer ? user?.height || "" : "");
   const [heightUnit, setHeightUnit] = useState<"cm" | "ft">("cm");
   const [age, setAge] = useState(!isTrainer ? user?.age?.toString() || "" : "");
-  const [fitnessLevel, setFitnessLevel] = useState("beginner");
+  const [fitnessLevel, setFitnessLevel] = useState<
+    "beginner" | "intermediate" | "advanced"
+  >("beginner");
   const [goals, setGoals] = useState<string[]>([]);
 
   const [isSaving, setIsSaving] = useState(false);
+  const [profilePicture, setProfilePicture] = useState(
+    user?.profilePicture || "",
+  );
 
   const handleAddSpecialty = () => {
     if (specialty.trim()) {
@@ -48,6 +54,27 @@ export default function EditProfileScreen() {
 
   const handleRemoveSpecialty = (index: number) => {
     setSpecialties(specialties.filter((_, i) => i !== index));
+  };
+
+  const handleProfileImageSelected = async (croppedImageUri: string) => {
+    try {
+      if (!user?.id) {
+        Alert.alert("Error", "User not authenticated");
+        return;
+      }
+
+      setIsSaving(true);
+      // Upload the image to Firebase Storage
+      const downloadUrl = await uploadProfilePicture(user.id, croppedImageUri);
+      setProfilePicture(downloadUrl);
+      setIsSaving(false);
+      Alert.alert("Success", "Profile picture updated successfully");
+    } catch (error) {
+      setIsSaving(false);
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to upload image";
+      Alert.alert("Error", errorMessage);
+    }
   };
 
   const handleSaveProfile = async () => {
@@ -72,7 +99,7 @@ export default function EditProfileScreen() {
           }
         : {
             name: name.trim(),
-            height: parseInt(height),
+            height: parseInt(String(height)),
             heightUnit,
             age: parseInt(age),
             fitnessLevel,
@@ -106,6 +133,13 @@ export default function EditProfileScreen() {
         {/* Basic Info Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Basic Information</Text>
+
+          {/* Profile Picture */}
+          <ProfilePicturePicker
+            onImageSelected={handleProfileImageSelected}
+            currentImage={profilePicture}
+            label="Profile Picture"
+          />
 
           {/* Name */}
           <View style={styles.formGroup}>
@@ -253,7 +287,11 @@ export default function EditProfileScreen() {
                         styles.levelButton,
                         fitnessLevel === level && styles.levelButtonActive,
                       ]}
-                      onPress={() => setFitnessLevel(level)}
+                      onPress={() =>
+                        setFitnessLevel(
+                          level as "beginner" | "intermediate" | "advanced",
+                        )
+                      }
                     >
                       <Text
                         style={[
