@@ -13,7 +13,7 @@ import { theme } from "@/theme";
 import { getCourse, updateCourseProgress } from "@/lib/firebase";
 import { useAuthStore } from "@/store/authStore";
 import { Course } from "@/lib/types";
-import { default as Button } from "@/components/Button";
+import { Button } from "@/components/Button";
 
 export default function LessonDetailScreen() {
   const router = useRouter();
@@ -70,11 +70,18 @@ export default function LessonDetailScreen() {
       setIsSaving(true);
 
       // Update progress in Firebase
-      await updateCourseProgress(courseId, user.id, {
-        lessonIndex: lessonIdx,
-        completedAt: new Date(),
-        checklistProgress: Array.from(completedItems),
-      });
+      const checklistProgress = checklistItems.map((item, index) => ({
+        itemId: item.id,
+        completed: completedItems.has(index),
+        completedAt: completedItems.has(index) ? Date.now() : undefined,
+      }));
+
+      await updateCourseProgress(
+        courseId,
+        lessonIdx.toString(),
+        user.id,
+        checklistProgress,
+      );
 
       Alert.alert("Success", "Lesson marked as complete! 🎉", [
         {
@@ -191,10 +198,7 @@ export default function LessonDetailScreen() {
           {/* Progress Bar */}
           <View style={styles.progressBarContainer}>
             <View
-              style={[
-                styles.progressBar,
-                { width: `${completionPercent}%` },
-              ]}
+              style={[styles.progressBar, { width: `${completionPercent}%` }]}
             />
           </View>
 
@@ -222,7 +226,7 @@ export default function LessonDetailScreen() {
                     completedItems.has(index) && styles.checklistItemCompleted,
                   ]}
                 >
-                  {item}
+                  {item.text}
                 </Text>
               </Pressable>
             ))}
@@ -233,7 +237,10 @@ export default function LessonDetailScreen() {
       {/* Navigation Buttons */}
       <View style={styles.navigationButtons}>
         <Pressable
-          style={[styles.navButton, lessonIdx === 0 && styles.navButtonDisabled]}
+          style={[
+            styles.navButton,
+            lessonIdx === 0 && styles.navButtonDisabled,
+          ]}
           onPress={handlePreviousLesson}
           disabled={lessonIdx === 0}
         >

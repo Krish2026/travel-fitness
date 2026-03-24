@@ -13,11 +13,10 @@ import {
 import { useState, useEffect } from "react";
 import { theme } from "@/theme";
 import { useAuthStore } from "@/store/authStore";
-import Button from "@/components/Button";
-import Input from "@/components/Input";
+import { Button } from "@/components/Button";
 
 export default function HealthEntryScreen() {
-  const { user, userProfile } = useAuthStore();
+  const { user } = useAuthStore();
   const [entryType, setEntryType] = useState<"weight" | "measurement">(
     "weight",
   );
@@ -108,10 +107,7 @@ export default function HealthEntryScreen() {
         {/* Entry Type Tabs */}
         <View style={styles.tabBar}>
           <Pressable
-            style={[
-              styles.tab,
-              entryType === "weight" && styles.tabActive,
-            ]}
+            style={[styles.tab, entryType === "weight" && styles.tabActive]}
             onPress={() => setEntryType("weight")}
           >
             <Text

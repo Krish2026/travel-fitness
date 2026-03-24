@@ -50,17 +50,11 @@ export function MiniCalendarWidget({
           return (
             <Pressable
               key={date.toISOString()}
-              style={[
-                styles.dayCell,
-                isSelected && styles.selectedDay,
-              ]}
+              style={[styles.dayCell, isSelected && styles.selectedDay]}
               onPress={() => onDateSelect?.(date)}
             >
               <Text
-                style={[
-                  styles.dayDate,
-                  isSelected && styles.selectedDayDate,
-                ]}
+                style={[styles.dayDate, isSelected && styles.selectedDayDate]}
               >
                 {date.getDate()}
               </Text>

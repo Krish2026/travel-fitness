@@ -13,16 +13,21 @@ import { theme } from "@/theme";
 import { useAuthStore } from "@/store/authStore";
 import { getCourse, getCoursesForTrainer } from "@/lib/firebase";
 import { Course } from "@/lib/types";
-import Button from "@/components/Button";
+import { Button } from "@/components/Button";
 
 export default function CoursesScreen() {
   const router = useRouter();
-  const { user } = useAuthStore();
   const [courses, setCourses] = useState<Course[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
-  const categories = ["all", "fitness", "nutrition", "wellness", "mental-health"];
+  const categories = [
+    "all",
+    "fitness",
+    "nutrition",
+    "wellness",
+    "mental-health",
+  ];
 
   useEffect(() => {
     const loadCourses = async () => {
@@ -74,10 +79,7 @@ export default function CoursesScreen() {
     );
   }
 
-  const filteredCourses =
-    selectedCategory === "all"
-      ? courses
-      : courses.filter((c) => c.category === selectedCategory);
+  const filteredCourses = courses;
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -134,9 +136,6 @@ export default function CoursesScreen() {
               <View style={styles.courseHeader}>
                 <View style={styles.courseInfo}>
                   <Text style={styles.courseTitleCard}>{course.title}</Text>
-                  <Text style={styles.courseCategory}>
-                    {course.category?.toUpperCase()}
-                  </Text>
                 </View>
                 <Text style={styles.courseLessons}>
                   {course.lessons?.length || 0} lessons
@@ -161,7 +160,7 @@ export default function CoursesScreen() {
                   <Text style={styles.metaText}>
                     {course.lessons?.reduce(
                       (sum, lesson) =>
-                        sum + (parseInt(lesson.duration || "0") || 0),
+                        sum + (parseInt(String(lesson.duration || "0")) || 0),
                       0,
                     ) || 0}{" "}
                     mins

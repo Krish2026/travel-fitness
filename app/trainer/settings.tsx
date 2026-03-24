@@ -11,10 +11,9 @@ import {
 import { useState, useEffect } from "react";
 import { theme } from "@/theme";
 import { useAuthStore } from "@/store/authStore";
-import Button from "@/components/Button";
+import { Button } from "@/components/Button";
 
 export default function TrainerSettingsScreen() {
-  const { user, userProfile } = useAuthStore();
   const [isChatEnabled, setIsChatEnabled] = useState(true);
   const [selectedTheme, setSelectedTheme] = useState<string>("red");
   const [isSaving, setIsSaving] = useState(false);
@@ -260,7 +259,6 @@ const styles = StyleSheet.create({
     borderRadius: theme.spacing.md,
     paddingVertical: theme.spacing.lg,
     paddingHorizontal: theme.spacing.md,
-    marginBottomWidth: 1,
     marginBottom: theme.spacing.md,
     borderWidth: 1,
     borderColor: theme.colors.border,

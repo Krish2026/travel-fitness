@@ -13,36 +13,28 @@ import {
 import { useState, useEffect } from "react";
 import { theme } from "@/theme";
 import { useAuthStore } from "@/store/authStore";
-import Button from "@/components/Button";
+import { Button } from "@/components/Button";
 
 export default function EditProfileScreen() {
-  const { user, userProfile } = useAuthStore();
-  const isTrainer = userProfile?.role === "trainer";
+  const { user } = useAuthStore();
+  const isTrainer = user?.role === "trainer";
 
   // User fields
-  const [name, setName] = useState(userProfile?.name || "");
+  const [name, setName] = useState(user?.name || "");
 
   // Trainer fields
-  const [bio, setBio] = useState(
-    isTrainer ? userProfile?.bio || "" : "",
-  );
+  const [bio, setBio] = useState(isTrainer ? user?.bio || "" : "");
   const [specialties, setSpecialties] = useState(
-    isTrainer ? userProfile?.specialties || [] : [],
+    isTrainer ? user?.specialties || [] : [],
   );
   const [specialty, setSpecialty] = useState("");
 
   // Client fields
-  const [height, setHeight] = useState(
-    !isTrainer ? userProfile?.height || "" : "",
-  );
+  const [height, setHeight] = useState(!isTrainer ? user?.height || "" : "");
   const [heightUnit, setHeightUnit] = useState<"cm" | "ft">("cm");
-  const [age, setAge] = useState(!isTrainer ? userProfile?.age?.toString() || "" : "");
-  const [fitnessLevel, setFitnessLevel] = useState(
-    !isTrainer ? userProfile?.fitnessLevel || "beginner" : "",
-  );
-  const [goals, setGoals] = useState(
-    !isTrainer ? userProfile?.goals || [] : [],
-  );
+  const [age, setAge] = useState(!isTrainer ? user?.age?.toString() || "" : "");
+  const [fitnessLevel, setFitnessLevel] = useState("beginner");
+  const [goals, setGoals] = useState<string[]>([]);
 
   const [isSaving, setIsSaving] = useState(false);
 
@@ -175,9 +167,7 @@ export default function EditProfileScreen() {
                     {specialties.map((item, index) => (
                       <View key={index} style={styles.specialtyTag}>
                         <Text style={styles.specialtyTagText}>{item}</Text>
-                        <Pressable
-                          onPress={() => handleRemoveSpecialty(index)}
-                        >
+                        <Pressable onPress={() => handleRemoveSpecialty(index)}>
                           <Text style={styles.removeButton}>✕</Text>
                         </Pressable>
                       </View>
@@ -218,7 +208,7 @@ export default function EditProfileScreen() {
                     placeholder="Enter height"
                     placeholderTextColor={theme.colors.textSecondary}
                     keyboardType="decimal-pad"
-                    value={height}
+                    value={String(height)}
                     onChangeText={setHeight}
                   />
                   <View style={styles.unitSelector}>
@@ -234,8 +224,7 @@ export default function EditProfileScreen() {
                         <Text
                           style={[
                             styles.unitButtonText,
-                            heightUnit === unit &&
-                              styles.unitButtonTextActive,
+                            heightUnit === unit && styles.unitButtonTextActive,
                           ]}
                         >
                           {unit}
@@ -317,7 +306,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   formGroup: {
-    marginBottomWidth: 1,
     marginBottom: theme.spacing.lg,
   },
   label: {

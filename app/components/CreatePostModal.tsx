@@ -15,7 +15,7 @@ import { useState } from "react";
 import { theme } from "@/theme";
 import { useAuthStore } from "@/store/authStore";
 import { createPost } from "@/lib/firebase";
-import Button from "@/components/Button";
+import { Button } from "@/components/Button";
 
 interface CreatePostModalProps {
   visible: boolean;
@@ -47,13 +47,12 @@ export default function CreatePostModal({
     try {
       setIsSubmitting(true);
 
-      await createPost({
-        trainerId: user.id,
-        trainerName: user.name || "Trainer",
-        title: title.trim(),
-        content: content.trim(),
-        category,
-        createdAt: new Date(),
+      await createPost(user.id || "", {
+        type: "text",
+        content: `${title}\n\n${content}`,
+        media: [],
+        hashtags: [],
+        taggedUsers: [],
       });
 
       Alert.alert("Success", "Post created successfully!");
@@ -157,7 +156,9 @@ export default function CreatePostModal({
               <Text style={styles.previewLabel}>Preview</Text>
               <View style={styles.previewCard}>
                 <View style={styles.previewHeader}>
-                  <Text style={styles.previewTitle}>{title || "Post Title"}</Text>
+                  <Text style={styles.previewTitle}>
+                    {title || "Post Title"}
+                  </Text>
                   <View style={styles.previewCategory}>
                     <Text style={styles.previewCategoryText}>{category}</Text>
                   </View>

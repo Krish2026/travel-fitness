@@ -11,10 +11,8 @@ import { useState, useEffect } from "react";
 import { theme } from "@/theme";
 import { useAuthStore } from "@/store/authStore";
 
-const { width } = Dimensions.get("window");
-
 export default function ProgressScreen() {
-  const { user, userProfile } = useAuthStore();
+  const { user } = useAuthStore();
   const [isLoading, setIsLoading] = useState(true);
   const [selectedMetric, setSelectedMetric] = useState<
     "weight" | "measurements" | "courses"
@@ -66,7 +64,8 @@ export default function ProgressScreen() {
           <Text style={styles.statLabel}>Current Weight</Text>
           <Text style={styles.statValue}>{stats.currentWeight} kg</Text>
           <Text style={styles.statChange}>
-            {stats.weightChange < 0 ? "📉" : "📈"} {Math.abs(stats.weightChange)} kg
+            {stats.weightChange < 0 ? "📉" : "📈"}{" "}
+            {Math.abs(stats.weightChange)} kg
           </Text>
         </View>
 
@@ -106,14 +105,9 @@ export default function ProgressScreen() {
         {["weight", "measurements", "courses"].map((metric) => (
           <Pressable
             key={metric}
-            style={[
-              styles.tab,
-              selectedMetric === metric && styles.tabActive,
-            ]}
+            style={[styles.tab, selectedMetric === metric && styles.tabActive]}
             onPress={() =>
-              setSelectedMetric(
-                metric as "weight" | "measurements" | "courses",
-              )
+              setSelectedMetric(metric as "weight" | "measurements" | "courses")
             }
           >
             <Text
@@ -124,8 +118,7 @@ export default function ProgressScreen() {
             >
               {metric === "weight" && "⚖️"}
               {metric === "measurements" && "📏"}
-              {metric === "courses" && "📚"}
-              {" "}
+              {metric === "courses" && "📚"}{" "}
               {metric.charAt(0).toUpperCase() + metric.slice(1)}
             </Text>
           </Pressable>
@@ -152,31 +145,19 @@ export default function ProgressScreen() {
               <View style={styles.chartBars}>
                 <View style={styles.bar}>
                   <View
-                    style={[
-                      styles.barFill,
-                      { height: "85%" },
-                      styles.barPast,
-                    ]}
+                    style={[styles.barFill, { height: "85%" }, styles.barPast]}
                   />
                   <Text style={styles.barLabel}>Week 1</Text>
                 </View>
                 <View style={styles.bar}>
                   <View
-                    style={[
-                      styles.barFill,
-                      { height: "80%" },
-                      styles.barPast,
-                    ]}
+                    style={[styles.barFill, { height: "80%" }, styles.barPast]}
                   />
                   <Text style={styles.barLabel}>Week 2</Text>
                 </View>
                 <View style={styles.bar}>
                   <View
-                    style={[
-                      styles.barFill,
-                      { height: "78%" },
-                      styles.barPast,
-                    ]}
+                    style={[styles.barFill, { height: "78%" }, styles.barPast]}
                   />
                   <Text style={styles.barLabel}>Week 3</Text>
                 </View>
@@ -219,26 +200,23 @@ export default function ProgressScreen() {
 
           <View style={styles.measurementsList}>
             {["Chest", "Waist", "Hips", "Arms", "Thighs"].map((measurement) => {
-                const progress = Math.random() * 100;
-                return (
-                  <View key={measurement} style={styles.measurementItem}>
-                    <View style={styles.measurementHeader}>
-                      <Text style={styles.measurementName}>{measurement}</Text>
-                      <Text style={styles.measurementValue}>
-                        {(80 + Math.random() * 20).toFixed(1)} cm
-                      </Text>
-                    </View>
-                    <View style={styles.progressBar}>
-                      <View
-                        style={[
-                          styles.progressFill,
-                          { width: `${progress}%` },
-                        ]}
-                      />
-                    </View>
+              const progress = Math.random() * 100;
+              return (
+                <View key={measurement} style={styles.measurementItem}>
+                  <View style={styles.measurementHeader}>
+                    <Text style={styles.measurementName}>{measurement}</Text>
+                    <Text style={styles.measurementValue}>
+                      {(80 + Math.random() * 20).toFixed(1)} cm
+                    </Text>
                   </View>
-                );
-              })}
+                  <View style={styles.progressBar}>
+                    <View
+                      style={[styles.progressFill, { width: `${progress}%` }]}
+                    />
+                  </View>
+                </View>
+              );
+            })}
           </View>
         </View>
       )}
@@ -252,14 +230,13 @@ export default function ProgressScreen() {
           <View style={styles.progressCard}>
             <View style={styles.progressHeader}>
               <Text style={styles.progressLabel}>Overall Completion</Text>
-              <Text style={styles.progressPercent}>{Math.round(progressPercent)}%</Text>
+              <Text style={styles.progressPercent}>
+                {Math.round(progressPercent)}%
+              </Text>
             </View>
             <View style={styles.progressBarContainer}>
               <View
-                style={[
-                  styles.progressBar,
-                  { width: `${progressPercent}%` },
-                ]}
+                style={[styles.progressBar, { width: `${progressPercent}%` }]}
               />
             </View>
           </View>
@@ -274,10 +251,7 @@ export default function ProgressScreen() {
             </View>
             <View style={styles.progressBarContainer}>
               <View
-                style={[
-                  styles.progressBar,
-                  { width: `${lessonPercent}%` },
-                ]}
+                style={[styles.progressBar, { width: `${lessonPercent}%` }]}
               />
             </View>
           </View>
@@ -288,9 +262,7 @@ export default function ProgressScreen() {
             {[1, 2, 3].map((course) => (
               <View key={course} style={styles.courseItem}>
                 <View style={styles.courseInfo}>
-                  <Text style={styles.courseName}>
-                    Course {course}
-                  </Text>
+                  <Text style={styles.courseName}>Course {course}</Text>
                   <Text style={styles.courseProgress}>
                     {Math.floor(Math.random() * 10) + 1}/10 lessons
                   </Text>
@@ -468,7 +440,6 @@ const styles = StyleSheet.create({
   metricStats: {
     flexDirection: "row",
     justifyContent: "space-around",
-    paddingTopWidth: 1,
     paddingTop: theme.spacing.lg,
     borderTopWidth: 1,
     borderTopColor: theme.colors.border,
@@ -523,7 +494,6 @@ const styles = StyleSheet.create({
     borderRadius: theme.spacing.md,
     paddingVertical: theme.spacing.lg,
     paddingHorizontal: theme.spacing.md,
-    marginBottomWidth: 1,
     marginBottom: theme.spacing.lg,
   },
   progressHeader: {
@@ -549,9 +519,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   coursesList: {
-    marginTopWidth: 1,
     marginTop: theme.spacing.lg,
-    paddingTopWidth: 1,
     paddingTop: theme.spacing.lg,
     borderTopWidth: 1,
     borderTopColor: theme.colors.border,

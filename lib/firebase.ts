@@ -377,7 +377,10 @@ export async function getCourse(courseId: string) {
 }
 
 export async function getCoursesForTrainer(trainerId: string) {
-  const q = query(collection(db, "courses"), where("trainerId", "==", trainerId));
+  const q = query(
+    collection(db, "courses"),
+    where("trainerId", "==", trainerId),
+  );
   const snap = await getDocs(q);
   return snap.docs.map((doc) => doc.data());
 }
@@ -386,10 +389,18 @@ export async function updateCourseProgress(
   clientId: string,
   courseId: string,
   lessonId: string,
-  checklistProgress: Array<{ itemId: string; completed: boolean; completedAt?: number }>,
+  checklistProgress: Array<{
+    itemId: string;
+    completed: boolean;
+    completedAt?: number;
+  }>,
   completedAt?: number,
 ): Promise<void> {
-  const progressRef = doc(db, "client_progress", `${clientId}_${courseId}_${lessonId}`);
+  const progressRef = doc(
+    db,
+    "client_progress",
+    `${clientId}_${courseId}_${lessonId}`,
+  );
   await setDoc(
     progressRef,
     {
@@ -404,8 +415,16 @@ export async function updateCourseProgress(
   );
 }
 
-export async function getCourseProgress(clientId: string, courseId: string, lessonId: string) {
-  const docRef = doc(db, "client_progress", `${clientId}_${courseId}_${lessonId}`);
+export async function getCourseProgress(
+  clientId: string,
+  courseId: string,
+  lessonId: string,
+) {
+  const docRef = doc(
+    db,
+    "client_progress",
+    `${clientId}_${courseId}_${lessonId}`,
+  );
   const docSnap = await getDoc(docRef);
   return docSnap.exists() ? docSnap.data() : null;
 }
@@ -497,7 +516,11 @@ export async function getMessages(msgLimit: number = 50) {
 export async function createCalendarEvent(
   userId: string,
   data: {
-    type: "weigh_in" | "course_completion" | "lesson_completion" | "session_booking";
+    type:
+      | "weigh_in"
+      | "course_completion"
+      | "lesson_completion"
+      | "session_booking";
     title: string;
     description?: string;
     date: number;
@@ -519,7 +542,10 @@ export async function createCalendarEvent(
 }
 
 export async function getCalendarEventsForUser(userId: string) {
-  const q = query(collection(db, "calendar_events"), where("userId", "==", userId));
+  const q = query(
+    collection(db, "calendar_events"),
+    where("userId", "==", userId),
+  );
   const snap = await getDocs(q);
   return snap.docs.map((doc) => doc.data());
 }

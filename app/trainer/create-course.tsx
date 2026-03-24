@@ -72,18 +72,26 @@ export default function CreateCourseScreen() {
   };
 
   const handleRemoveChecklistItem = (id: string) => {
-    const newChecklist = currentLesson.checklist.filter((item) => item.id !== id);
+    const newChecklist = currentLesson.checklist.filter(
+      (item) => item.id !== id,
+    );
     setCurrentLesson({ ...currentLesson, checklist: newChecklist });
   };
 
   const handleAddLesson = () => {
     if (!canAddLesson()) {
-      Alert.alert("Invalid Lesson", "Please fill in all required lesson fields");
+      Alert.alert(
+        "Invalid Lesson",
+        "Please fill in all required lesson fields",
+      );
       return;
     }
 
     if (lessons.length >= 10) {
-      Alert.alert("Limit Reached", "You can only have a maximum of 10 lessons per course");
+      Alert.alert(
+        "Limit Reached",
+        "You can only have a maximum of 10 lessons per course",
+      );
       return;
     }
 
@@ -118,8 +126,10 @@ export default function CreateCourseScreen() {
     const newErrors: Record<string, string> = {};
 
     if (!courseTitle.trim()) newErrors.courseTitle = "Course title is required";
-    if (!courseDescription.trim()) newErrors.courseDescription = "Course description is required";
-    if (lessons.length === 0) newErrors.lessons = "At least one lesson is required";
+    if (!courseDescription.trim())
+      newErrors.courseDescription = "Course description is required";
+    if (lessons.length === 0)
+      newErrors.lessons = "At least one lesson is required";
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -146,7 +156,8 @@ export default function CreateCourseScreen() {
       Alert.alert("Success", "Course created successfully!");
       router.back();
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Failed to create course";
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to create course";
       Alert.alert("Error", errorMessage);
     } finally {
       setIsLoading(false);
@@ -204,15 +215,17 @@ export default function CreateCourseScreen() {
       {/* Lessons Section */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>
-            Lessons ({lessons.length}/10)
-          </Text>
-          {errors.lessons && <Text style={styles.errorText}>{errors.lessons}</Text>}
+          <Text style={styles.sectionTitle}>Lessons ({lessons.length}/10)</Text>
+          {errors.lessons && (
+            <Text style={styles.errorText}>{errors.lessons}</Text>
+          )}
         </View>
 
         {/* Current Lesson Builder */}
         <View style={styles.lessonBuilder}>
-          <Text style={styles.lessonBuilderTitle}>Create Lesson {lessons.length + 1}</Text>
+          <Text style={styles.lessonBuilderTitle}>
+            Create Lesson {lessons.length + 1}
+          </Text>
 
           <Input
             label="Lesson Title"
@@ -317,9 +330,8 @@ export default function CreateCourseScreen() {
                   <Text style={styles.lessonNumber}>Lesson {index + 1}</Text>
                   <Text style={styles.lessonTitle}>{lesson.title}</Text>
                   <Text style={styles.lessonMeta}>
-                    {lesson.checklist.length} checklist items • {Math.round(lesson.duration / 60)}
-                    {" "}
-                    min
+                    {lesson.checklist.length} checklist items •{" "}
+                    {Math.round(lesson.duration / 60)} min
                   </Text>
                 </View>
                 <Pressable
@@ -446,7 +458,7 @@ const styles = StyleSheet.create({
   lessonsList: {
     borderTopWidth: 1,
     borderTopColor: theme.colors.border,
-    paddingTopY: theme.spacing.lg,
+    paddingTop: theme.spacing.lg,
   },
   lessonsListTitle: {
     fontSize: 14,

@@ -189,9 +189,7 @@ export default function CommunityScreen() {
             )}
           </Pressable>
         </View>
-        <Text style={styles.charCount}>
-          {messageText.length}/500
-        </Text>
+        <Text style={styles.charCount}>{messageText.length}/500</Text>
       </View>
     </KeyboardAvoidingView>
   );

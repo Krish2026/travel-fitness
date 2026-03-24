@@ -48,7 +48,7 @@ export default function CalendarScreen() {
   const firstDay = getFirstDayOfMonth(currentDate);
 
   const days = [];
-  for (let i = 0; i < firstDay; i++)days.push(null);
+  for (let i = 0; i < firstDay; i++) days.push(null);
   for (let i = 1; i <= daysInMonth; i++) days.push(i);
 
   const hasEventOnDate = (day: number): boolean => {
@@ -57,9 +57,7 @@ export default function CalendarScreen() {
       currentDate.getMonth(),
       day,
     );
-    return events.some((event) =>
-      isSameDay(new Date(event.date), dateToCheck),
-    );
+    return events.some((event) => isSameDay(new Date(event.date), dateToCheck));
   };
 
   const getEventsForDate = (day: number) => {
@@ -127,16 +125,14 @@ export default function CalendarScreen() {
       {/* Calendar Grid */}
       <View style={styles.calendarGrid}>
         {days.map((day, index) => {
-          const isToday = day &&
+          const isToday =
+            day &&
             isSameDay(
-              new Date(
-                currentDate.getFullYear(),
-                currentDate.getMonth(),
-                day,
-              ),
+              new Date(currentDate.getFullYear(), currentDate.getMonth(), day),
               new Date(),
             );
-          const isSelected = day &&
+          const isSelected =
+            day &&
             selectedDate &&
             day === selectedDate.getDate() &&
             currentDate.getMonth() === selectedDate.getMonth();
@@ -187,7 +183,8 @@ export default function CalendarScreen() {
       {selectedDate && (
         <View style={styles.eventsSection}>
           <Text style={styles.eventsTitle}>
-            Events for {selectedDate.toLocaleDateString("en-US", {
+            Events for{" "}
+            {selectedDate.toLocaleDateString("en-US", {
               month: "short",
               day: "numeric",
             })}
