@@ -1,11 +1,11 @@
 import { Text, View, StyleSheet } from "react-native";
 import { theme } from "../../theme";
 
-export default function ProfileScreen() {
+export default function TrainersScreen() {
   return (
     <View style={styles.container}>
-      <Text style={styles.heading}>Profile Screen</Text>
-      <Text style={styles.placeholder}>Profile functionality coming soon</Text>
+      <Text style={styles.heading}>Trainers Screen</Text>
+      <Text style={styles.placeholder}>Trainers functionality coming soon</Text>
     </View>
   );
 }

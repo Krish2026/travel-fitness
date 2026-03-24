@@ -1,29 +1,42 @@
-import { Redirect, SplashScreen, Tabs } from "expo-router";
-import Entypo from "@expo/vector-icons/Entypo";
+import { SplashScreen, Tabs } from "expo-router";
+import { useEffect } from "react";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import Feather from "@expo/vector-icons/Feather";
-import { theme } from "@/theme";
-import { useUserStore } from "@/store/userStore";
+import { theme } from "../../theme";
+
+export const unstable_settings = {
+  initialRouteName: "home",
+};
 
 export default function Layout() {
-  SplashScreen.hideAsync();
-
-  const hasFinishedOnboarding = useUserStore(
-    (state) => state.hasFinishedOnboarding
-  );
-  if (!hasFinishedOnboarding) {
-    return <Redirect href="/onboarding" />;
-  }
+  useEffect(() => {
+    SplashScreen.hideAsync();
+  }, []);
 
   return (
     <Tabs screenOptions={{ tabBarActiveTintColor: theme.colorGreen }}>
       <Tabs.Screen
-        name="(home)"
+        name="home"
         options={{
-          headerShown: false,
           title: "Home",
-          tabBarShowLabel: false,
+          headerShown: true,
+          headerShadowVisible: false,
+          tabBarShowLabel: true,
           tabBarIcon: ({ size, color }) => (
-            <Entypo name="leaf" size={size} color={color} />
+            <MaterialIcons name="home" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="trainers"
+        options={{
+          title: "Trainers",
+          headerShown: true,
+          headerShadowVisible: false,
+          tabBarShowLabel: true,
+          tabBarIcon: ({ size, color }) => (
+            <FontAwesome5 name="dumbbell" size={size} color={color} />
           ),
         }}
       />
@@ -31,7 +44,9 @@ export default function Layout() {
         name="profile"
         options={{
           title: "Profile",
-          tabBarShowLabel: false,
+          headerShown: true,
+          headerShadowVisible: false,
+          tabBarShowLabel: true,
           tabBarIcon: ({ size, color }) => (
             <Feather name="user" size={size} color={color} />
           ),

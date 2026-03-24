@@ -1,33 +1,33 @@
 {
   "expo": {
-    "name": "Plantly",
-    "slug": "plantly",
-    "scheme": "plantly",
+    "name": "Travel Fitness",
+    "slug": "travel-fitness",
+    "scheme": "travel-fitness",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/travel-fitness-logo.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash.png",
+      "image": "./assets/travel-fitness-logo.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.plantly"
+      "bundleIdentifier": "com.travelfitness.app"
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/travel-fitness-logo.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.plantly"
+      "package": "com.travelfitness.app"
     },
     "web": {
-      "favicon": "./assets/favicon.png",
+      "favicon": "./assets/travel-fitness-logo.png",
       "bundler": "metro"
     },
     "plugins": [
@@ -38,17 +38,6 @@
           "fonts": [
             "node_modules/@expo-google-fonts/caveat/400Regular/Caveat_400Regular.ttf"
           ]
-        }
-      ],
-      [
-        "expo-quick-actions",
-        {
-          "androidIcons": {
-            "leaf": {
-              "foregroundImage": "./assets/leaf.png",
-              "backgroundColor": "#ffffff"
-            }
-          }
         }
       ]
     ]
