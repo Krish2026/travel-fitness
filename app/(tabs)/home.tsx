@@ -6,10 +6,14 @@ import {
   ActivityIndicator,
   ScrollView,
 } from "react-native";
+import { useState, useEffect } from "react";
 import { useAuthStore } from "@/store/authStore";
 import { theme } from "@/theme";
 import { ClientProfile, TrainerProfile } from "@/lib/types";
 import { router } from "expo-router";
+import { LevelBadge } from "@/components/LevelBadge";
+import { LevelUpNotification } from "@/components/LevelUpNotification";
+import { getLevelUpEvents } from "@/lib/firebase";
 
 export default function HomeScreen() {
   const { user, isLoading } = useAuthStore();
@@ -32,69 +36,108 @@ export default function HomeScreen() {
 }
 
 function ClientHomeScreen({ user }: { user: ClientProfile }) {
-  return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      <View style={styles.header}>
-        <Text style={styles.welcomeText}>Welcome, {user.name}!</Text>
-        <Text style={styles.subtitle}>
-          to your fitness journey through Travel Fitness
-        </Text>
-      </View>
+  const [showLevelUp, setShowLevelUp] = useState(false);
+  const [newLevel, setNewLevel] = useState(user.userLevel || 1);
+  const [lastLevelUpTime, setLastLevelUpTime] = useState<number | null>(null);
 
-      {/* Health Stats Card */}
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Current Stats</Text>
-        <View style={styles.statsGrid}>
-          <View style={styles.statItem}>
-            <Text style={styles.statLabel}>Weight</Text>
-            <Text style={styles.statValue}>{user.weight} lbs</Text>
+  // Check for recent level-up events
+  useEffect(() => {
+    const checkLevelUp = async () => {
+      try {
+        const events = await getLevelUpEvents(user.id);
+        if (events.length > 0) {
+          const latestEvent = events[0];
+          const now = Date.now();
+          const timeSinceLastEvent = now - latestEvent.timestamp;
+
+          // Show notification if level-up happened within last 2 seconds
+          if (timeSinceLastEvent < 2000 && !lastLevelUpTime) {
+            setNewLevel(latestEvent.newLevel);
+            setShowLevelUp(true);
+            setLastLevelUpTime(latestEvent.timestamp);
+          }
+        }
+      } catch (error) {
+        console.error("Error checking level-up events:", error);
+      }
+    };
+
+    checkLevelUp();
+  }, [user.id]);
+
+  return (
+    <View style={styles.screenContainer}>
+      <LevelUpNotification
+        visible={showLevelUp}
+        newLevel={newLevel}
+        onDismiss={() => setShowLevelUp(false)}
+      />
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        <View style={styles.header}>
+          <View>
+            <Text style={styles.welcomeText}>Welcome, {user.name}!</Text>
+            <Text style={styles.subtitle}>
+              to your fitness journey through Travel Fitness
+            </Text>
           </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statLabel}>Height</Text>
-            <Text style={styles.statValue}>{user.height} in</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statLabel}>Goal Weight</Text>
-            <Text style={styles.statValue}>{user.goalWeight} lbs</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statLabel}>Body Fat %</Text>
-            <Text style={styles.statValue}>{user.bodyFatPercentage}%</Text>
+          <LevelBadge level={user.userLevel || 1} size="medium" />
+        </View>
+
+        {/* Health Stats Card */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Current Stats</Text>
+          <View style={styles.statsGrid}>
+            <View style={styles.statItem}>
+              <Text style={styles.statLabel}>Weight</Text>
+              <Text style={styles.statValue}>{user.weight} lbs</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statLabel}>Height</Text>
+              <Text style={styles.statValue}>{user.height} in</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statLabel}>Goal Weight</Text>
+              <Text style={styles.statValue}>{user.goalWeight} lbs</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statLabel}>Body Fat %</Text>
+              <Text style={styles.statValue}>{user.bodyFatPercentage}%</Text>
+            </View>
           </View>
         </View>
-      </View>
 
-      {/* Goal Description */}
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Your Goal</Text>
-        <Text style={styles.goalText}>{user.goalDescription}</Text>
-      </View>
+        {/* Goal Description */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Your Goal</Text>
+          <Text style={styles.goalText}>{user.goalDescription}</Text>
+        </View>
 
-      {/* Quick Actions */}
-      <View style={styles.actionsContainer}>
-        <Pressable
-          style={({ pressed }) => [
-            styles.actionButton,
-            pressed && styles.pressed,
-          ]}
-          onPress={() => router.push("/(tabs)/trainers")}
-        >
-          <Text style={styles.actionButtonText}>View Trainer</Text>
-        </Pressable>
-        <Pressable
-          style={({ pressed }) => [
-            styles.actionButton,
-            styles.secondaryButton,
-            pressed && styles.pressed,
-          ]}
-          onPress={() => router.push("/(tabs)/profile")}
-        >
-          <Text style={styles.actionButtonText}>Edit Profile</Text>
-        </Pressable>
-      </View>
+        {/* Quick Actions */}
+        <View style={styles.actionsContainer}>
+          <Pressable
+            style={({ pressed }) => [
+              styles.actionButton,
+              pressed && styles.pressed,
+            ]}
+            onPress={() => router.push("/(tabs)/trainers")}
+          >
+            <Text style={styles.actionButtonText}>View Trainer</Text>
+          </Pressable>
+          <Pressable
+            style={({ pressed }) => [
+              styles.actionButton,
+              styles.secondaryButton,
+              pressed && styles.pressed,
+            ]}
+            onPress={() => router.push("/(tabs)/profile")}
+          >
+            <Text style={styles.actionButtonText}>Edit Profile</Text>
+          </Pressable>
+        </View>
 
-      <View style={styles.spacer} />
-    </ScrollView>
+        <View style={styles.spacer} />
+      </ScrollView>
+    </View>
   );
 }
 
@@ -148,6 +191,10 @@ function TrainerHomeScreen({ user }: { user: TrainerProfile }) {
 }
 
 const styles = StyleSheet.create({
+  screenContainer: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+  },
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,
@@ -164,6 +211,10 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.divider,
     marginBottom: theme.spacing.lg,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: theme.spacing.lg,
   },
   welcomeText: {
     fontSize: 24,

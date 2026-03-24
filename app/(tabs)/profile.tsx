@@ -6,11 +6,15 @@ import {
   Pressable,
   ActivityIndicator,
   Alert,
+  FlatList,
 } from "react-native";
 import { useAuthStore } from "@/store/authStore";
 import { theme } from "@/theme";
 import { ClientProfile, TrainerProfile } from "@/lib/types";
 import { router } from "expo-router";
+import { useState, useEffect } from "react";
+import { LevelBadge } from "@/components/LevelBadge";
+import { getUserLevelInfo } from "@/lib/firebase";
 
 export default function ProfileScreen() {
   const { user, isLoading, logout } = useAuthStore();
@@ -34,6 +38,23 @@ export default function ProfileScreen() {
 
 function ClientProfileScreen({ user }: { user: ClientProfile }) {
   const { logout } = useAuthStore();
+  const [levelInfo, setLevelInfo] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadLevelInfo = async () => {
+      try {
+        const info = await getUserLevelInfo(user.id);
+        setLevelInfo(info);
+      } catch (error) {
+        console.error("Error loading level info:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadLevelInfo();
+  }, [user.id]);
 
   const handleLogout = () => {
     Alert.alert("Logout", "Are you sure you want to logout?", [
@@ -60,6 +81,45 @@ function ClientProfileScreen({ user }: { user: ClientProfile }) {
         <Text style={styles.name}>{user.name}</Text>
         <Text style={styles.email}>{user.email}</Text>
       </View>
+
+      {/* Level Section */}
+      {!loading && levelInfo && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Your Level</Text>
+          <View style={styles.levelCard}>
+            <View style={styles.levelDisplay}>
+              <LevelBadge level={levelInfo.currentLevel} size="large" />
+              <View style={styles.levelStats}>
+                <Text style={styles.levelStatsText}>
+                  {levelInfo.completedCourses} Courses Completed
+                </Text>
+                <Text style={styles.levelStatsSubtext}>
+                  Complete {levelInfo.nextLevelRequirement} total courses for
+                  Level {levelInfo.currentLevel + 1}
+                </Text>
+              </View>
+            </View>
+
+            {levelInfo.levelUpHistory.length > 0 && (
+              <View style={styles.achievementsContainer}>
+                <Text style={styles.achievementsTitle}>
+                  Achievement History
+                </Text>
+                <View style={styles.achievementsList}>
+                  {levelInfo.levelUpHistory
+                    .slice(0, 5)
+                    .map((achievement: any, index: number) => (
+                      <Text key={index} style={styles.achievementItem}>
+                        ⭐ Level {achievement.level} -{" "}
+                        {new Date(achievement.achievedAt).toLocaleDateString()}
+                      </Text>
+                    ))}
+                </View>
+              </View>
+            )}
+          </View>
+        </View>
+      )}
 
       {/* Health Information */}
       <View style={styles.section}>
@@ -287,6 +347,53 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing.md,
     borderWidth: 1,
     borderColor: theme.colors.border,
+  },
+  levelCard: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.spacing.md,
+    paddingVertical: theme.spacing.lg,
+    paddingHorizontal: theme.spacing.md,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    gap: theme.spacing.lg,
+  },
+  levelDisplay: {
+    flexDirection: "row",
+    gap: theme.spacing.lg,
+    alignItems: "center",
+  },
+  levelStats: {
+    flex: 1,
+    gap: theme.spacing.xs,
+  },
+  levelStatsText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: theme.colors.text,
+  },
+  levelStatsSubtext: {
+    fontSize: 12,
+    color: theme.colors.textSecondary,
+    lineHeight: 16,
+  },
+  achievementsContainer: {
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
+    paddingTop: theme.spacing.md,
+  },
+  achievementsTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: theme.colors.text,
+    marginBottom: theme.spacing.sm,
+  },
+  achievementsList: {
+    gap: theme.spacing.sm,
+  },
+  achievementItem: {
+    fontSize: 13,
+    color: theme.colors.textSecondary,
+    paddingVertical: theme.spacing.xs,
   },
   infoRow: {
     flexDirection: "row",

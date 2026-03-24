@@ -15,7 +15,20 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.travelfitness.app"
+      "bundleIdentifier": "com.travelfitness.app",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSCameraUsageDescription": "We need camera access to capture profile pictures and workout videos",
+        "NSPhotoLibraryUsageDescription": "We need access to your photos for profile pictures and meal images",
+        "NSPhotoLibraryAddOnlyUsageDescription": "We need to save your workout videos and photos",
+        "NSMicrophoneUsageDescription": "Microphone access for video uploads"
+      },
+      "splash": {
+        "image": "./assets/travel-fitness-logo.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#ffffff"
+      },
+      "deploymentTarget": "14.0"
     },
     "android": {
       "adaptiveIcon": {

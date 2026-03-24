@@ -6,6 +6,7 @@ import {
   Pressable,
   ActivityIndicator,
   Alert,
+  FlatList,
 } from "react-native";
 import { useState, useEffect } from "react";
 import { useRouter } from "expo-router";
@@ -14,11 +15,15 @@ import { useAuthStore } from "@/store/authStore";
 import { getAllCourses, enrollCourse } from "@/lib/firebase";
 import { Course } from "@/lib/types";
 import { Button } from "@/components/Button";
+import { EmptyState } from "@/components/EmptyState";
+import { ErrorState } from "@/components/ErrorState";
+import { SkeletonList } from "@/components/Skeleton";
 
 export default function CoursesScreen() {
   const router = useRouter();
   const [courses, setCourses] = useState<Course[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
   const categories = [
@@ -36,11 +41,16 @@ export default function CoursesScreen() {
   const loadCourses = async () => {
     try {
       setIsLoading(true);
+      setError(null);
       const allCourses = await getAllCourses();
       setCourses(allCourses as Course[]);
     } catch (error) {
       console.error("Error loading courses:", error);
-      Alert.alert("Error", "Failed to load courses");
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Failed to load courses. Please check your connection.",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -82,8 +92,26 @@ export default function CoursesScreen() {
 
   if (isLoading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={theme.colors.primary} />
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Browse Courses</Text>
+          <Text style={styles.subtitle}>
+            Learn from expert trainers and transform your fitness
+          </Text>
+        </View>
+        <SkeletonList count={3} />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.container}>
+        <ErrorState
+          title="Failed to Load Courses"
+          message={error}
+          onRetry={loadCourses}
+        />
       </View>
     );
   }
@@ -130,12 +158,12 @@ export default function CoursesScreen() {
 
       {/* Courses List */}
       {filteredCourses.length === 0 ? (
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyStateIcon}>📚</Text>
-          <Text style={styles.emptyStateTitle}>No courses available</Text>
-          <Text style={styles.emptyStateSubtitle}>
-            Check back soon for new courses
-          </Text>
+        <View style={{ flex: 1, minHeight: 400 }}>
+          <EmptyState
+            icon="school"
+            title="No Courses Available"
+            description="There are no courses available right now. Check back soon!"
+          />
         </View>
       ) : (
         <View style={styles.coursesList}>
@@ -167,11 +195,12 @@ export default function CoursesScreen() {
                 <View style={styles.metaItem}>
                   <Text style={styles.metaIcon}>⏱️</Text>
                   <Text style={styles.metaText}>
-                    {course.lessons?.reduce(
-                      (sum, lesson) =>
-                        sum + (parseInt(String(lesson.duration || "0")) || 0),
-                      0,
-                    ) || 0}{" "}
+                    {Math.round(
+                      (course.lessons?.reduce(
+                        (sum, lesson) => sum + (lesson.videoDuration || 0),
+                        0,
+                      ) || 0) / 60,
+                    )}{" "}
                     mins
                   </Text>
                 </View>

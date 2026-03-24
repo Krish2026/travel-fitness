@@ -10,6 +10,8 @@ interface AuthStore {
   isAuthenticated: boolean;
   error: string | null;
   userId: string | null;
+  userRole: "client" | "trainer" | null;
+  lastLoginTimestamp: number | null;
 
   // Actions
   setUser: (user: ClientProfile | TrainerProfile | null) => void;
@@ -18,6 +20,7 @@ interface AuthStore {
   initializeAuth: () => Promise<void>;
   logout: () => Promise<void>;
   clearError: () => void;
+  saveUserSession: (user: ClientProfile | TrainerProfile) => Promise<void>;
 }
 
 export const useAuthStore = create<AuthStore>((set) => ({
@@ -26,12 +29,15 @@ export const useAuthStore = create<AuthStore>((set) => ({
   isAuthenticated: false,
   error: null,
   userId: null,
+  userRole: null,
+  lastLoginTimestamp: null,
 
   setUser: (user) => {
     set({
       user,
       isAuthenticated: !!user,
       userId: user?.id || null,
+      userRole: user?.role || null,
     });
   },
 
@@ -41,9 +47,40 @@ export const useAuthStore = create<AuthStore>((set) => ({
 
   clearError: () => set({ error: null }),
 
+  saveUserSession: async (user: ClientProfile | TrainerProfile) => {
+    try {
+      const sessionData = {
+        userId: user.id,
+        userRole: user.role,
+        lastLoginTimestamp: Date.now(),
+        userProfile: user,
+      };
+      await AsyncStorage.setItem("userSession", JSON.stringify(sessionData));
+    } catch (error) {
+      console.error("Error saving user session:", error);
+    }
+  },
+
   initializeAuth: async () => {
     try {
       set({ isLoading: true });
+
+      // First, try to load persisted session
+      const savedSession = await AsyncStorage.getItem("userSession");
+      let persistedSessionData: {
+        userId: string;
+        userRole: "client" | "trainer";
+        lastLoginTimestamp: number;
+        userProfile: ClientProfile | TrainerProfile;
+      } | null = null;
+
+      if (savedSession) {
+        try {
+          persistedSessionData = JSON.parse(savedSession);
+        } catch (parseError) {
+          console.error("Error parsing saved session:", parseError);
+        }
+      }
 
       // Check if user is logged in via Firebase
       const currentUser = auth.currentUser;
@@ -67,35 +104,56 @@ export const useAuthStore = create<AuthStore>((set) => ({
         }
 
         if (userProfile) {
+          // Save the session to AsyncStorage
+          const sessionData = {
+            userId: currentUser.uid,
+            userRole: userProfile.role,
+            lastLoginTimestamp: Date.now(),
+            userProfile: userProfile,
+          };
+          await AsyncStorage.setItem(
+            "userSession",
+            JSON.stringify(sessionData),
+          );
+
           set({
             user: userProfile,
             isAuthenticated: true,
             userId: currentUser.uid,
+            userRole: userProfile.role,
+            lastLoginTimestamp: Date.now(),
             isLoading: false,
           });
-
-          // Store in AsyncStorage for offline access
-          await AsyncStorage.setItem(
-            "userProfile",
-            JSON.stringify(userProfile),
-          );
         } else {
           // User exists in Auth but no profile - shouldn't happen, logout
-          set({ user: null, isAuthenticated: false, isLoading: false });
+          set({
+            user: null,
+            isAuthenticated: false,
+            isLoading: false,
+            userId: null,
+            userRole: null,
+          });
         }
       } else {
-        // Check if there's a cached user session
-        const cachedProfile = await AsyncStorage.getItem("userProfile");
-        if (cachedProfile) {
-          const profile = JSON.parse(cachedProfile);
+        // Not logged in to Firebase, check if there's a persisted session
+        if (persistedSessionData) {
           set({
-            user: profile,
+            user: persistedSessionData.userProfile,
             isAuthenticated: false, // Not fully authenticated without Firebase
-            userId: profile.id,
+            userId: persistedSessionData.userId,
+            userRole: persistedSessionData.userRole,
+            lastLoginTimestamp: persistedSessionData.lastLoginTimestamp,
             isLoading: false,
           });
         } else {
-          set({ user: null, isAuthenticated: false, isLoading: false });
+          set({
+            user: null,
+            isAuthenticated: false,
+            isLoading: false,
+            userId: null,
+            userRole: null,
+            lastLoginTimestamp: null,
+          });
         }
       }
     } catch (error) {
@@ -105,15 +163,20 @@ export const useAuthStore = create<AuthStore>((set) => ({
         isLoading: false,
       });
 
-      // Try to load cached profile as fallback
+      // Try to load persisted session as fallback
       try {
-        const cachedProfile = await AsyncStorage.getItem("userProfile");
-        if (cachedProfile) {
-          const profile = JSON.parse(cachedProfile);
-          set({ user: profile, userId: profile.id });
+        const savedSession = await AsyncStorage.getItem("userSession");
+        if (savedSession) {
+          const sessionData = JSON.parse(savedSession);
+          set({
+            user: sessionData.userProfile,
+            userId: sessionData.userId,
+            userRole: sessionData.userRole,
+            lastLoginTimestamp: sessionData.lastLoginTimestamp,
+          });
         }
       } catch (cacheError) {
-        console.error("Error loading cached profile:", cacheError);
+        console.error("Error loading cached session:", cacheError);
       }
     }
   },
@@ -122,11 +185,15 @@ export const useAuthStore = create<AuthStore>((set) => ({
     try {
       set({ isLoading: true });
       await auth.signOut();
-      await AsyncStorage.removeItem("userProfile");
+      // Clear all session-related storage
+      await AsyncStorage.removeItem("userSession");
+      await AsyncStorage.removeItem("userProfile"); // For backward compatibility
       set({
         user: null,
         isAuthenticated: false,
         userId: null,
+        userRole: null,
+        lastLoginTimestamp: null,
         isLoading: false,
       });
     } catch (error) {

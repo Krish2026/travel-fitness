@@ -179,7 +179,11 @@ export default function LessonDetailScreen() {
           </View>
           <View style={styles.videoDuration}>
             <Text style={styles.videoDurationText}>
-              ⏱️ {lesson.duration || "N/A"} minutes
+              ⏱️{" "}
+              {lesson.videoDuration
+                ? Math.round(lesson.videoDuration / 60)
+                : "N/A"}{" "}
+              minutes
             </Text>
           </View>
         </View>

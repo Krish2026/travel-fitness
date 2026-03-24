@@ -23,6 +23,8 @@ export interface ClientProfile extends BaseUser {
   goalDescription: string;
   trainerId: string; // FK to trainer
   enrolledCourses: string[]; // array of courseIds
+  userLevel: number; // calculated from completed courses
+  completedCourses: string[]; // array of completed courseIds
 }
 
 export interface TrainerProfile extends BaseUser {
@@ -31,6 +33,18 @@ export interface TrainerProfile extends BaseUser {
   specialties: string[];
   themeColor: string; // hex color code
   isVerified: boolean;
+}
+
+// Trainer Settings
+export interface TrainerSettings {
+  trainerId: string;
+  isChatEnabled: boolean;
+  themeColor?: string;
+  notifications?: {
+    newMessages: boolean;
+    courseEnrollments: boolean;
+  };
+  updatedAt?: number;
 }
 
 // Health Tracking
@@ -47,14 +61,25 @@ export interface HealthEntry {
 }
 
 // Course & Lessons
+export interface ChecklistItem {
+  id: string;
+  text: string;
+  completed: boolean;
+  order: number;
+  completedAt?: number;
+}
+
 export interface Lesson {
   id: string;
   title: string;
   description: string;
   videoUrl: string;
-  duration: number; // seconds
+  videoThumbnail?: string;
+  videoDuration: number; // seconds
   checklist: ChecklistItem[];
-  order: number;
+  order: number; // 1-10
+  createdAt: number;
+  updatedAt: number;
 }
 
 export interface Course {
@@ -64,33 +89,81 @@ export interface Course {
   description: string;
   thumbnail?: string;
   lessons: Lesson[];
+  totalLessons: number;
   createdAt: number;
   updatedAt: number;
 }
 
-export interface ChecklistItem {
-  id: string;
-  text: string;
-  completed: boolean;
-  order: number;
-}
-
-// Client Progress
-export interface ClientProgress {
+// Lesson progress - tracks client's progress through lessons
+export interface LessonProgress {
   clientId: string;
   courseId: string;
   lessonId: string;
-  viewedAt: number;
+  startedAt: number;
+  completedAt?: number;
   checklistProgress: {
     itemId: string;
     completed: boolean;
     completedAt?: number;
   }[];
+  completionPercentage: number;
+}
+
+export interface ClientCourseProgress {
+  clientId: string;
+  courseId: string;
+  enrolledAt: number;
   completedAt?: number;
+  completionPercentage: number;
+  lessonsCompleted: number;
+  totalLessons: number;
+}
+
+// User Level Tracking
+export interface UserLevelInfo {
+  userId: string;
+  currentLevel: number;
+  completedCourses: number;
+  nextLevelRequirement: number;
+  progressToNextLevel: number; // percentage
+  totalCompletedCourses: string[]; // array of completed course IDs
+  lastLevelUpAt?: number;
+  levelUpHistory: {
+    level: number;
+    achievedAt: number;
+  }[];
+}
+
+export interface LevelUpEvent {
+  id: string;
+  userId: string;
+  previousLevel: number;
+  newLevel: number;
+  timestamp: number;
+  message: string;
+  read: boolean;
 }
 
 // Posts & Community
 export type PostType = "video" | "image" | "text";
+
+// Meal Plans
+export interface Meal {
+  id: string;
+  trainerId: string;
+  name: string;
+  image?: string;
+  recipe: string;
+  cookingVideoUrl?: string;
+  macros?: {
+    protein: number;
+    carbs: number;
+    fat: number;
+    calories: number;
+  };
+  createdAt: number;
+  tags?: string[];
+}
 
 export interface Post {
   id: string;

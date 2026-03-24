@@ -41,6 +41,18 @@ export default function Layout() {
         }}
       />
       <Tabs.Screen
+        name="calendar"
+        options={{
+          title: "Calendar",
+          headerShown: true,
+          headerShadowVisible: false,
+          tabBarShowLabel: true,
+          tabBarIcon: ({ size, color }) => (
+            <MaterialIcons name="calendar-month" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="profile"
         options={{
           title: "Profile",

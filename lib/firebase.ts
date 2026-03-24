@@ -29,6 +29,8 @@ import {
   deleteObject,
   FirebaseStorage,
 } from "firebase/storage";
+import * as FileSystem from "expo-file-system";
+import { TrainerSettings, UserLevelInfo, LevelUpEvent } from "@/lib/types";
 
 // Firebase configuration from environment variables
 const firebaseConfig = {
@@ -264,16 +266,6 @@ export async function getTrainerProfile(userId: string) {
   return docSnap.exists() ? docSnap.data() : null;
 }
 
-export async function getUserProfile(userId: string) {
-  const clientProfile = await getClientProfile(userId);
-  if (clientProfile) return clientProfile;
-
-  const trainerProfile = await getTrainerProfile(userId);
-  if (trainerProfile) return trainerProfile;
-
-  return null;
-}
-
 export async function getTrainerById(trainerId: string) {
   const docRef = doc(db, "trainers", trainerId);
   const docSnap = await getDoc(docRef);
@@ -500,6 +492,78 @@ export async function getPostsForTrainer(trainerId: string) {
   );
   const snap = await getDocs(q);
   return snap.docs.map((doc) => doc.data());
+}
+
+// Get trainer's clients for tagging
+export async function getTrainerClients(trainerId: string): Promise<
+  Array<{
+    id: string;
+    name: string;
+    profilePicture?: string;
+  }>
+> {
+  const q = query(
+    collection(db, "clients"),
+    where("trainerId", "==", trainerId),
+  );
+  const snap = await getDocs(q);
+  return snap.docs.map((doc) => {
+    const data = doc.data();
+    return {
+      id: data.id,
+      name: data.name,
+      profilePicture: data.profilePicture,
+    };
+  });
+}
+
+// Search posts by hashtag
+export async function getPostsByHashtag(hashtag: string) {
+  const q = query(
+    collection(db, "posts"),
+    where("hashtags", "array-contains", hashtag.toLowerCase()),
+    orderBy("timestamp", "desc"),
+  );
+  const snap = await getDocs(q);
+  return snap.docs.map((doc) => doc.data());
+}
+
+// Get user profile by ID (client or trainer)
+export async function getUserProfile(userId: string): Promise<{
+  id: string;
+  name: string;
+  profilePicture?: string;
+  role: "client" | "trainer";
+} | null> {
+  // Try to get as client first
+  const clientRef = doc(db, "clients", userId);
+  const clientSnap = await getDoc(clientRef);
+
+  if (clientSnap.exists()) {
+    const data = clientSnap.data();
+    return {
+      id: data.id,
+      name: data.name,
+      profilePicture: data.profilePicture,
+      role: "client",
+    };
+  }
+
+  // Try as trainer
+  const trainerRef = doc(db, "trainers", userId);
+  const trainerSnap = await getDoc(trainerRef);
+
+  if (trainerSnap.exists()) {
+    const data = trainerSnap.data();
+    return {
+      id: data.id,
+      name: data.name,
+      profilePicture: data.profilePicture,
+      role: "trainer",
+    };
+  }
+
+  return null;
 }
 
 // Message Functions
@@ -733,23 +797,18 @@ export async function getProgressData(userId: string) {
 // Trainer Settings Functions
 export async function updateTrainerSettings(
   trainerId: string,
-  data: {
-    isChatEnabled?: boolean;
-    themeColor?: string;
-    notifications?: {
-      newMessages?: boolean;
-      courseEnrollments?: boolean;
-    };
-  },
+  data: Partial<TrainerSettings>,
 ): Promise<void> {
   const settingsRef = doc(db, "trainer_settings", trainerId);
   await setDoc(settingsRef, data, { merge: true });
 }
 
-export async function getTrainerSettings(trainerId: string) {
+export async function getTrainerSettings(
+  trainerId: string,
+): Promise<TrainerSettings | null> {
   const settingsRef = doc(db, "trainer_settings", trainerId);
   const snap = await getDoc(settingsRef);
-  return snap.exists() ? snap.data() : null;
+  return snap.exists() ? (snap.data() as TrainerSettings) : null;
 }
 
 // Admin Functions (for testing)
@@ -764,4 +823,290 @@ export async function getAllUsers() {
     clients: clientsSnap.docs.map((doc) => doc.data()),
     trainers: trainersSnap.docs.map((doc) => doc.data()),
   };
+}
+
+// Storage Functions
+export async function uploadVideoToFirebase(
+  videoUri: string,
+  fileName: string,
+  onProgress?: (progress: number) => void,
+): Promise<string> {
+  try {
+    // Read the file
+    const base64 = await FileSystem.readAsStringAsync(videoUri, {
+      encoding: "base64",
+    });
+
+    // Convert base64 to blob
+    const blob = await fetch(`data:video/mp4;base64,${base64}`).then((res) =>
+      res.blob(),
+    );
+
+    // Create a unique filename
+    const timestamp = Date.now();
+    const storagePath = `videos/${timestamp}_${fileName}`;
+
+    // Create reference and upload
+    const storageRef = ref(storage, storagePath);
+    const uploadTask = await uploadBytes(storageRef, blob);
+
+    // Get download URL
+    const downloadURL = await getDownloadURL(uploadTask.ref);
+
+    return downloadURL;
+  } catch (error) {
+    console.error("Error uploading video:", error);
+    throw error;
+  }
+}
+
+export async function uploadImageToFirebase(
+  imageUri: string,
+  fileName: string,
+  folder: string = "images",
+): Promise<string> {
+  try {
+    const base64 = await FileSystem.readAsStringAsync(imageUri, {
+      encoding: "base64",
+    });
+
+    const blob = await fetch(`data:image/jpeg;base64,${base64}`).then((res) =>
+      res.blob(),
+    );
+
+    const timestamp = Date.now();
+    const storagePath = `${folder}/${timestamp}_${fileName}`;
+    const storageRef = ref(storage, storagePath);
+    const uploadTask = await uploadBytes(storageRef, blob);
+
+    return await getDownloadURL(uploadTask.ref);
+  } catch (error) {
+    console.error("Error uploading image:", error);
+    throw error;
+  }
+}
+
+export async function deleteFileFromStorage(fileUrl: string): Promise<void> {
+  try {
+    const fileRef = ref(storage, fileUrl);
+    await deleteObject(fileRef);
+  } catch (error) {
+    console.error("Error deleting file:", error);
+    throw error;
+  }
+}
+
+// Level-Up System Functions
+function calculateUserLevel(completedCoursesCount: number): number {
+  // Level 1 = 0 courses, Level 2 = 1 course, Level 3 = 2 courses, etc.
+  return Math.max(1, completedCoursesCount + 1);
+}
+
+export async function completeLesson(
+  clientId: string,
+  courseId: string,
+  lessonId: string,
+): Promise<void> {
+  try {
+    const progressRef = doc(
+      db,
+      "clients",
+      clientId,
+      "course_progress",
+      courseId,
+    );
+    const snap = await getDoc(progressRef);
+
+    if (snap.exists()) {
+      const data = snap.data();
+      const lessonsCompleted = Math.min(
+        (data.lessonsCompleted || 0) + 1,
+        data.totalLessons || 1,
+      );
+      const completionPercentage = Math.round(
+        (lessonsCompleted / (data.totalLessons || 1)) * 100,
+      );
+
+      await setDoc(
+        progressRef,
+        {
+          lessonsCompleted,
+          completionPercentage,
+          lastLessonCompletedAt: Date.now(),
+        },
+        { merge: true },
+      );
+
+      // If course is complete, trigger course completion
+      if (completionPercentage === 100) {
+        await completeCourse(clientId, courseId);
+      }
+    }
+  } catch (error) {
+    console.error("Error completing lesson:", error);
+    throw error;
+  }
+}
+
+export async function completeCourse(
+  clientId: string,
+  courseId: string,
+): Promise<void> {
+  try {
+    // Update course progress
+    const progressRef = doc(
+      db,
+      "clients",
+      clientId,
+      "course_progress",
+      courseId,
+    );
+    await setDoc(
+      progressRef,
+      {
+        completedAt: Date.now(),
+        completionPercentage: 100,
+      },
+      { merge: true },
+    );
+
+    // Get client profile
+    const clientRef = doc(db, "clients", clientId);
+    const clientSnap = await getDoc(clientRef);
+
+    if (clientSnap.exists()) {
+      const clientData = clientSnap.data();
+      const completedCourses = clientData.completedCourses || [];
+
+      // Add course to completed list if not already there
+      if (!completedCourses.includes(courseId)) {
+        completedCourses.push(courseId);
+
+        const oldLevel = calculateUserLevel(completedCourses.length - 1);
+        const newLevel = calculateUserLevel(completedCourses.length);
+
+        // Update client profile with new level and completed courses
+        await setDoc(
+          clientRef,
+          {
+            completedCourses,
+            userLevel: newLevel,
+            lastLevelUpAt:
+              newLevel > oldLevel ? Date.now() : clientData.lastLevelUpAt,
+          },
+          { merge: true },
+        );
+
+        // Create level-up event if level increased
+        if (newLevel > oldLevel) {
+          await createLevelUpEvent(clientId, oldLevel, newLevel);
+        }
+      }
+    }
+  } catch (error) {
+    console.error("Error completing course:", error);
+    throw error;
+  }
+}
+
+export async function getUserLevelInfo(
+  clientId: string,
+): Promise<UserLevelInfo | null> {
+  try {
+    const clientRef = doc(db, "clients", clientId);
+    const snap = await getDoc(clientRef);
+
+    if (!snap.exists()) {
+      return null;
+    }
+
+    const data = snap.data();
+    const completedCourses = data.completedCourses || [];
+    const completedCount = completedCourses.length;
+    const currentLevel = calculateUserLevel(completedCount);
+    const nextLevelRequirement = currentLevel; // Need completedCount+1 courses for next level
+    const progressToNextLevel = Math.round(
+      ((completedCount % 1) * 100) as number,
+    );
+
+    return {
+      userId: clientId,
+      currentLevel,
+      completedCourses: completedCount,
+      nextLevelRequirement,
+      progressToNextLevel: Math.min(100, progressToNextLevel),
+      totalCompletedCourses: completedCourses,
+      lastLevelUpAt: data.lastLevelUpAt,
+      levelUpHistory: data.levelUpHistory || [],
+    };
+  } catch (error) {
+    console.error("Error getting user level info:", error);
+    return null;
+  }
+}
+
+export async function createLevelUpEvent(
+  userId: string,
+  oldLevel: number,
+  newLevel: number,
+): Promise<void> {
+  try {
+    const eventId = `level_up_${userId}_${Date.now()}`;
+    const eventRef = doc(db, "level_up_events", eventId);
+
+    const levelUpEvent: LevelUpEvent = {
+      id: eventId,
+      userId,
+      previousLevel: oldLevel,
+      newLevel,
+      timestamp: Date.now(),
+      message: `🎉 Congratulations! You've reached Level ${newLevel}!`,
+      read: false,
+    };
+
+    await setDoc(eventRef, levelUpEvent);
+
+    // Also add to user's levelUpHistory
+    const clientRef = doc(db, "clients", userId);
+    const clientSnap = await getDoc(clientRef);
+
+    if (clientSnap.exists()) {
+      const data = clientSnap.data();
+      const levelUpHistory = data.levelUpHistory || [];
+      levelUpHistory.push({
+        level: newLevel,
+        achievedAt: Date.now(),
+      });
+
+      await setDoc(
+        clientRef,
+        {
+          levelUpHistory: levelUpHistory.slice(-10), // Keep last 10 level-ups
+        },
+        { merge: true },
+      );
+    }
+  } catch (error) {
+    console.error("Error creating level-up event:", error);
+    throw error;
+  }
+}
+
+export async function getLevelUpEvents(
+  userId: string,
+): Promise<LevelUpEvent[]> {
+  try {
+    const q = query(
+      collection(db, "level_up_events"),
+      where("userId", "==", userId),
+      orderBy("timestamp", "desc"),
+      firestoreLimit(20),
+    );
+
+    const snap = await getDocs(q);
+    return snap.docs.map((doc) => doc.data() as LevelUpEvent);
+  } catch (error) {
+    console.error("Error getting level-up events:", error);
+    return [];
+  }
 }

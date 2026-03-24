@@ -11,7 +11,7 @@ import {
 import { useState, useEffect } from "react";
 import { theme } from "@/theme";
 import { useAuthStore } from "@/store/authStore";
-import { updateTrainerSettings } from "@/lib/firebase";
+import { updateTrainerSettings, getTrainerSettings } from "@/lib/firebase";
 import { Button } from "@/components/Button";
 
 export default function TrainerSettingsScreen() {
@@ -19,6 +19,7 @@ export default function TrainerSettingsScreen() {
   const [isChatEnabled, setIsChatEnabled] = useState(true);
   const [selectedTheme, setSelectedTheme] = useState<string>("red");
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const themeOptions = [
     { name: "Red", color: "#FF6B6B", id: "red" },
@@ -27,6 +28,34 @@ export default function TrainerSettingsScreen() {
     { name: "Blue", color: "#3498DB", id: "blue" },
     { name: "Orange", color: "#E67E22", id: "orange" },
   ];
+
+  // Load settings from Firestore on mount
+  useEffect(() => {
+    const loadSettings = async () => {
+      if (!user?.id) {
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const settings = await getTrainerSettings(user.id);
+        if (settings) {
+          setIsChatEnabled(
+            settings.isChatEnabled !== undefined
+              ? settings.isChatEnabled
+              : true,
+          );
+          setSelectedTheme(settings.themeColor || "red");
+        }
+      } catch (error) {
+        console.error("Error loading settings:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadSettings();
+  }, [user?.id]);
 
   const handleSaveSettings = async () => {
     try {
@@ -52,6 +81,14 @@ export default function TrainerSettingsScreen() {
       setIsSaving(false);
     }
   };
+
+  if (isLoading) {
+    return (
+      <View style={[styles.container, styles.centerContent]}>
+        <ActivityIndicator size="large" color={theme.colors.primary} />
+      </View>
+    );
+  }
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -245,6 +282,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.background,
     paddingHorizontal: theme.spacing.lg,
+  },
+  centerContent: {
+    justifyContent: "center",
+    alignItems: "center",
   },
   header: {
     paddingVertical: theme.spacing.lg,

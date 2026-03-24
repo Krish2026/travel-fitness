@@ -13,7 +13,12 @@ import {
 import { useState, useEffect } from "react";
 import { theme } from "@/theme";
 import { useAuthStore } from "@/store/authStore";
-import { sendMessage, getMessages } from "@/lib/firebase";
+import {
+  sendMessage,
+  getMessages,
+  getTrainerSettings,
+  getTrainerClients,
+} from "@/lib/firebase";
 import { db } from "@/lib/firebase";
 import {
   collection,
@@ -33,6 +38,7 @@ export default function CommunityScreen() {
   const [messageText, setMessageText] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [chatEnabled, setChatEnabled] = useState(true);
+  const [trainerChatEnabled, setTrainerChatEnabled] = useState(true);
 
   useEffect(() => {
     // Subscribe to realtime messages
@@ -61,9 +67,39 @@ export default function CommunityScreen() {
     return () => unsubscribe();
   }, []);
 
+  // Load trainer's chat settings (for clients viewing chat)
+  useEffect(() => {
+    const getTrainerChat = async () => {
+      try {
+        // If user is trainer, fetch their own settings
+        if (isTrainer && user?.id) {
+          const settings = await getTrainerSettings(user.id);
+          if (settings) {
+            setTrainerChatEnabled(
+              settings.isChatEnabled !== undefined
+                ? settings.isChatEnabled
+                : true,
+            );
+          }
+        } else {
+          // If user is client, we need to get their trainer's settings
+          // For now, we'll assume chat is enabled unless proven otherwise
+          setTrainerChatEnabled(true);
+        }
+      } catch (error) {
+        console.error("Error loading trainer chat settings:", error);
+        setTrainerChatEnabled(true);
+      }
+    };
+
+    getTrainerChat();
+  }, [isTrainer, user?.id]);
+
   const handleSendMessage = async () => {
     if (!messageText.trim()) return;
-    if (!chatEnabled && !isTrainer) {
+
+    // Check if chat is disabled by trainer
+    if (!trainerChatEnabled) {
       Alert.alert("Chat Disabled", "The trainer has disabled community chat");
       return;
     }
@@ -136,10 +172,10 @@ export default function CommunityScreen() {
       keyboardVerticalOffset={100}
     >
       {/* Chat Disabled Notice */}
-      {!chatEnabled && (
+      {!trainerChatEnabled && (
         <View style={styles.disabledNotice}>
           <Text style={styles.disabledText}>
-            💬 Community chat is currently disabled
+            💬 Community chat is currently disabled by the trainer
           </Text>
         </View>
       )}
@@ -164,11 +200,13 @@ export default function CommunityScreen() {
         <View style={styles.inputRow}>
           <TextInput
             style={styles.input}
-            placeholder="Type your message..."
+            placeholder={
+              trainerChatEnabled ? "Type your message..." : "Chat is disabled"
+            }
             placeholderTextColor={theme.colors.textSecondary}
             value={messageText}
             onChangeText={setMessageText}
-            editable={!isSending && chatEnabled}
+            editable={!isSending && trainerChatEnabled}
             multiline
             numberOfLines={1}
             maxLength={500}
@@ -176,11 +214,12 @@ export default function CommunityScreen() {
           <Pressable
             style={({ pressed }) => [
               styles.sendButton,
-              (!messageText.trim() || isSending) && styles.sendButtonDisabled,
+              (!messageText.trim() || isSending || !trainerChatEnabled) &&
+                styles.sendButtonDisabled,
               pressed && styles.pressed,
             ]}
             onPress={handleSendMessage}
-            disabled={!messageText.trim() || isSending}
+            disabled={!messageText.trim() || isSending || !trainerChatEnabled}
           >
             {isSending ? (
               <ActivityIndicator size="small" color="white" />
