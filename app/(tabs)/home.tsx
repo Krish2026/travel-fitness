@@ -47,15 +47,15 @@ function ClientHomeScreen({ user }: { user: ClientProfile }) {
         <View style={styles.statsGrid}>
           <View style={styles.statItem}>
             <Text style={styles.statLabel}>Weight</Text>
-            <Text style={styles.statValue}>{user.weight} kg</Text>
+            <Text style={styles.statValue}>{user.weight} lbs</Text>
           </View>
           <View style={styles.statItem}>
             <Text style={styles.statLabel}>Height</Text>
-            <Text style={styles.statValue}>{user.height} cm</Text>
+            <Text style={styles.statValue}>{user.height} in</Text>
           </View>
           <View style={styles.statItem}>
             <Text style={styles.statLabel}>Goal Weight</Text>
-            <Text style={styles.statValue}>{user.goalWeight} kg</Text>
+            <Text style={styles.statValue}>{user.goalWeight} lbs</Text>
           </View>
           <View style={styles.statItem}>
             <Text style={styles.statLabel}>Body Fat %</Text>

@@ -4,7 +4,7 @@ export default function NotFoundScreen() {
   return (
     <>
       <Stack.Screen options={{ title: "Oops!" }} />
-      <Redirect href="/home" />
+      <Redirect href="/auth/role-select" />
     </>
   );
 }

@@ -1,5 +1,5 @@
 // User Types
-export type UserRole = 'client' | 'trainer';
+export type UserRole = "client" | "trainer";
 
 export interface BaseUser {
   id: string;
@@ -12,11 +12,11 @@ export interface BaseUser {
 }
 
 export interface ClientProfile extends BaseUser {
-  role: 'client';
-  weight: number; // kg
-  height: number; // cm
+  role: "client";
+  weight: number; // lbs
+  height: number; // inches
   age: number;
-  gender: 'male' | 'female' | 'other';
+  gender: "male" | "female" | "other";
   bodyFatPercentage: number;
   musclePercentage: number;
   goalWeight: number;
@@ -26,7 +26,7 @@ export interface ClientProfile extends BaseUser {
 }
 
 export interface TrainerProfile extends BaseUser {
-  role: 'trainer';
+  role: "trainer";
   bio: string;
   specialties: string[];
   themeColor: string; // hex color code
@@ -37,8 +37,8 @@ export interface TrainerProfile extends BaseUser {
 export interface HealthEntry {
   id: string;
   clientId: string;
-  weight: number;
-  height: number;
+  weight: number; // lbs
+  height: number; // inches
   bodyFatPercentage: number;
   musclePercentage: number;
   timestamp: number;
@@ -90,7 +90,7 @@ export interface ClientProgress {
 }
 
 // Posts & Community
-export type PostType = 'video' | 'image' | 'text';
+export type PostType = "video" | "image" | "text";
 
 export interface Post {
   id: string;
@@ -100,7 +100,7 @@ export interface Post {
   caption?: string;
   media: {
     url: string;
-    type: 'image' | 'video';
+    type: "image" | "video";
   }[];
   hashtags: string[];
   taggedUsers: string[];
@@ -126,14 +126,18 @@ export interface Message {
   senderId: string;
   senderName: string;
   content: string;
-  type: 'text' | 'emoji';
+  type: "text" | "emoji";
   timestamp: number;
   edited?: boolean;
   editedAt?: number;
 }
 
 // Calendar
-export type CalendarEventType = 'weigh_in' | 'course_completion' | 'lesson_completion' | 'session_booking';
+export type CalendarEventType =
+  | "weigh_in"
+  | "course_completion"
+  | "lesson_completion"
+  | "session_booking";
 
 export interface CalendarEvent {
   id: string;

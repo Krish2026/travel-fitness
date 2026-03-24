@@ -13,7 +13,7 @@ import { theme } from "@/theme";
 import { validateTrainerPassword } from "@/lib/validators";
 
 export default function TrainerPasswordScreen() {
-  const [password, setPassword] = useState("");
+  const [password, setPassword] = useState("test123");
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");

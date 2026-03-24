@@ -1,8 +1,8 @@
-import { create } from 'zustand';
-import { auth, db } from '@/lib/firebase';
-import { doc, getDoc } from 'firebase/firestore';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ClientProfile, TrainerProfile } from '@/lib/types';
+import { create } from "zustand";
+import { auth, db } from "@/lib/firebase";
+import { doc, getDoc } from "firebase/firestore";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { ClientProfile, TrainerProfile } from "@/lib/types";
 
 interface AuthStore {
   user: ClientProfile | TrainerProfile | null;
@@ -52,13 +52,13 @@ export const useAuthStore = create<AuthStore>((set) => ({
         // Try to get user profile from Firestore
         let userProfile: ClientProfile | TrainerProfile | null = null;
 
-        const clientRef = doc(db, 'clients', currentUser.uid);
+        const clientRef = doc(db, "clients", currentUser.uid);
         const clientSnap = await getDoc(clientRef);
 
         if (clientSnap.exists()) {
           userProfile = clientSnap.data() as ClientProfile;
         } else {
-          const trainerRef = doc(db, 'trainers', currentUser.uid);
+          const trainerRef = doc(db, "trainers", currentUser.uid);
           const trainerSnap = await getDoc(trainerRef);
 
           if (trainerSnap.exists()) {
@@ -75,14 +75,17 @@ export const useAuthStore = create<AuthStore>((set) => ({
           });
 
           // Store in AsyncStorage for offline access
-          await AsyncStorage.setItem('userProfile', JSON.stringify(userProfile));
+          await AsyncStorage.setItem(
+            "userProfile",
+            JSON.stringify(userProfile),
+          );
         } else {
           // User exists in Auth but no profile - shouldn't happen, logout
           set({ user: null, isAuthenticated: false, isLoading: false });
         }
       } else {
         // Check if there's a cached user session
-        const cachedProfile = await AsyncStorage.getItem('userProfile');
+        const cachedProfile = await AsyncStorage.getItem("userProfile");
         if (cachedProfile) {
           const profile = JSON.parse(cachedProfile);
           set({
@@ -96,21 +99,21 @@ export const useAuthStore = create<AuthStore>((set) => ({
         }
       }
     } catch (error) {
-      console.error('Error initializing auth:', error);
+      console.error("Error initializing auth:", error);
       set({
-        error: error instanceof Error ? error.message : 'Authentication error',
+        error: error instanceof Error ? error.message : "Authentication error",
         isLoading: false,
       });
 
       // Try to load cached profile as fallback
       try {
-        const cachedProfile = await AsyncStorage.getItem('userProfile');
+        const cachedProfile = await AsyncStorage.getItem("userProfile");
         if (cachedProfile) {
           const profile = JSON.parse(cachedProfile);
           set({ user: profile, userId: profile.id });
         }
       } catch (cacheError) {
-        console.error('Error loading cached profile:', cacheError);
+        console.error("Error loading cached profile:", cacheError);
       }
     }
   },
@@ -119,7 +122,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
     try {
       set({ isLoading: true });
       await auth.signOut();
-      await AsyncStorage.removeItem('userProfile');
+      await AsyncStorage.removeItem("userProfile");
       set({
         user: null,
         isAuthenticated: false,
@@ -127,9 +130,9 @@ export const useAuthStore = create<AuthStore>((set) => ({
         isLoading: false,
       });
     } catch (error) {
-      console.error('Error logging out:', error);
+      console.error("Error logging out:", error);
       set({
-        error: error instanceof Error ? error.message : 'Logout failed',
+        error: error instanceof Error ? error.message : "Logout failed",
         isLoading: false,
       });
     }

@@ -12,7 +12,6 @@ import { useState } from "react";
 import { router, useLocalSearchParams } from "expo-router";
 import { theme } from "@/theme";
 import { validateSignupForm } from "@/lib/validators";
-import { signup } from "@/lib/firebase";
 
 export default function SignupScreen() {
   const { role } = useLocalSearchParams<{ role: string }>();
@@ -40,10 +39,19 @@ export default function SignupScreen() {
     setIsLoading(true);
 
     try {
-      await signup(email, password, (role as "client" | "trainer") || "client");
+      // Don't create auth user here - only validate credentials
+      // Auth user will be created after profile is successfully created
 
-      // Navigate to profile creation
-      router.replace(`/auth/create-profile?role=${role}`);
+      // Navigate to profile creation with email & password in params
+      router.push({
+        pathname: "/auth/create-profile",
+        params: {
+          role: role || "client",
+          email: email,
+          password: password,
+          isNewSignup: "true",
+        },
+      });
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Signup failed";

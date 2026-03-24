@@ -21,6 +21,9 @@ import {
   createClientProfile,
   createTrainerProfile,
   auth,
+  signup,
+  signupNewClient,
+  signupNewTrainer,
 } from "@/lib/firebase";
 import { useAuthStore } from "@/store/authStore";
 
@@ -46,7 +49,12 @@ const THEME_COLORS = [
 ];
 
 export default function CreateProfileScreen() {
-  const { role } = useLocalSearchParams<{ role: string }>();
+  const { role, email, password, isNewSignup } = useLocalSearchParams<{
+    role: string;
+    email?: string;
+    password?: string;
+    isNewSignup?: string;
+  }>();
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const { initializeAuth } = useAuthStore();
@@ -110,26 +118,45 @@ export default function CreateProfileScreen() {
     setIsLoading(true);
 
     try {
-      const userId = auth.currentUser?.uid;
-      const email = auth.currentUser?.email;
+      // Check if this is a new signup flow
+      if (isNewSignup === "true" && email && password) {
+        // New signup: create auth user and profile together
+        await signupNewClient(email, password, {
+          name,
+          weight: parseFloat(weight),
+          height: parseFloat(height),
+          age: parseInt(age),
+          gender,
+          bodyFatPercentage: parseFloat(bodyFatPercentage),
+          musclePercentage: parseFloat(musclePercentage),
+          goalWeight: parseFloat(goalWeight),
+          goalDescription,
+          trainerId,
+          profilePicture,
+        });
+      } else {
+        // Existing user: just create profile
+        const userId = auth.currentUser?.uid;
+        const userEmail = auth.currentUser?.email;
 
-      if (!userId || !email) {
-        throw new Error("User not authenticated");
+        if (!userId || !userEmail) {
+          throw new Error("User not authenticated");
+        }
+
+        await createClientProfile(userId, userEmail, {
+          name,
+          weight: parseFloat(weight),
+          height: parseFloat(height),
+          age: parseInt(age),
+          gender,
+          bodyFatPercentage: parseFloat(bodyFatPercentage),
+          musclePercentage: parseFloat(musclePercentage),
+          goalWeight: parseFloat(goalWeight),
+          goalDescription,
+          trainerId,
+          profilePicture,
+        });
       }
-
-      await createClientProfile(userId, email, {
-        name,
-        weight: parseFloat(weight),
-        height: parseFloat(height),
-        age: parseInt(age),
-        gender,
-        bodyFatPercentage: parseFloat(bodyFatPercentage),
-        musclePercentage: parseFloat(musclePercentage),
-        goalWeight: parseFloat(goalWeight),
-        goalDescription,
-        trainerId,
-        profilePicture,
-      });
 
       // Initialize auth to load profile
       await initializeAuth();
@@ -160,20 +187,33 @@ export default function CreateProfileScreen() {
     setIsLoading(true);
 
     try {
-      const userId = auth.currentUser?.uid;
-      const email = auth.currentUser?.email;
+      // Check if this is a new signup flow
+      if (isNewSignup === "true" && email && password) {
+        // New signup: create auth user and profile together
+        await signupNewTrainer(email, password, {
+          name,
+          bio,
+          specialties: selectedSpecialties,
+          themeColor: selectedColor,
+          profilePicture,
+        });
+      } else {
+        // Existing user: just create profile
+        const userId = auth.currentUser?.uid;
+        const userEmail = auth.currentUser?.email;
 
-      if (!userId || !email) {
-        throw new Error("User not authenticated");
+        if (!userId || !userEmail) {
+          throw new Error("User not authenticated");
+        }
+
+        await createTrainerProfile(userId, userEmail, {
+          name,
+          bio,
+          specialties: selectedSpecialties,
+          themeColor: selectedColor,
+          profilePicture,
+        });
       }
-
-      await createTrainerProfile(userId, email, {
-        name,
-        bio,
-        specialties: selectedSpecialties,
-        themeColor: selectedColor,
-        profilePicture,
-      });
 
       // Initialize auth to load profile
       await initializeAuth();
@@ -226,7 +266,7 @@ export default function CreateProfileScreen() {
           <>
             {/* Weight */}
             <View style={styles.inputContainer}>
-              <Text style={styles.label}>Current Weight (kg)</Text>
+              <Text style={styles.label}>Current Weight (lbs)</Text>
               <View
                 style={[
                   styles.inputWrapper,
@@ -235,7 +275,7 @@ export default function CreateProfileScreen() {
               >
                 <TextInput
                   style={styles.input}
-                  placeholder="e.g., 75"
+                  placeholder="e.g., 170"
                   placeholderTextColor={theme.colors.textSecondary}
                   keyboardType="decimal-pad"
                   value={weight}
@@ -257,7 +297,7 @@ export default function CreateProfileScreen() {
 
             {/* Height */}
             <View style={styles.inputContainer}>
-              <Text style={styles.label}>Height (cm)</Text>
+              <Text style={styles.label}>Height (inches)</Text>
               <View
                 style={[
                   styles.inputWrapper,
@@ -266,7 +306,7 @@ export default function CreateProfileScreen() {
               >
                 <TextInput
                   style={styles.input}
-                  placeholder="e.g., 180"
+                  placeholder="e.g., 70"
                   placeholderTextColor={theme.colors.textSecondary}
                   keyboardType="decimal-pad"
                   value={height}
@@ -403,7 +443,7 @@ export default function CreateProfileScreen() {
 
             {/* Goal Weight */}
             <View style={styles.inputContainer}>
-              <Text style={styles.label}>Goal Weight (kg)</Text>
+              <Text style={styles.label}>Goal Weight (lbs)</Text>
               <View
                 style={[
                   styles.inputWrapper,
@@ -412,7 +452,7 @@ export default function CreateProfileScreen() {
               >
                 <TextInput
                   style={styles.input}
-                  placeholder="e.g., 70"
+                  placeholder="e.g., 160"
                   placeholderTextColor={theme.colors.textSecondary}
                   keyboardType="decimal-pad"
                   value={goalWeight}

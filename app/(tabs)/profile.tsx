@@ -67,12 +67,12 @@ function ClientProfileScreen({ user }: { user: ClientProfile }) {
         <View style={styles.card}>
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Current Weight</Text>
-            <Text style={styles.infoValue}>{user.weight} kg</Text>
+            <Text style={styles.infoValue}>{user.weight} lbs</Text>
           </View>
           <View style={styles.divider} />
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Height</Text>
-            <Text style={styles.infoValue}>{user.height} cm</Text>
+            <Text style={styles.infoValue}>{user.height} in</Text>
           </View>
           <View style={styles.divider} />
           <View style={styles.infoRow}>
@@ -105,7 +105,7 @@ function ClientProfileScreen({ user }: { user: ClientProfile }) {
         <View style={styles.card}>
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Goal Weight</Text>
-            <Text style={styles.infoValue}>{user.goalWeight} kg</Text>
+            <Text style={styles.infoValue}>{user.goalWeight} lbs</Text>
           </View>
           <View style={styles.divider} />
           <View style={styles.goalDescriptionRow}>
