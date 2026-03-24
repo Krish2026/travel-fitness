@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import Feather from "@expo/vector-icons/Feather";
-import { theme } from "../../theme";
+import { theme } from "@/theme";
 
 export const unstable_settings = {
   initialRouteName: "home",
@@ -15,7 +15,7 @@ export default function Layout() {
   }, []);
 
   return (
-    <Tabs screenOptions={{ tabBarActiveTintColor: theme.colorGreen }}>
+    <Tabs screenOptions={{ tabBarActiveTintColor: theme.colors.primary }}>
       <Tabs.Screen
         name="home"
         options={{
