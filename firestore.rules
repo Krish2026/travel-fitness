@@ -1,0 +1,93 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isUserDocument(userId) {
+      return request.auth.uid == userId;
+    }
+    
+    function isTrainer() {
+      return request.auth.token.role == 'trainer';
+    }
+    
+    function isClient() {
+      return request.auth.token.role == 'client';
+    }
+    
+    // Client Collection Rules
+    match /clients/{clientId} {
+      // Clients can read/write their own profile
+      allow read, write: if isAuthenticated() && isUserDocument(clientId);
+      // Trainers can read client profiles
+      allow read: if isAuthenticated() && isTrainer();
+    }
+    
+    // Trainer Collection Rules
+    match /trainers/{trainerId} {
+      // Trainers can read/write their own profile
+      allow read, write: if isAuthenticated() && isUserDocument(trainerId);
+      // Anyone authenticated can read trainer profiles
+      allow read: if isAuthenticated();
+    }
+    
+    // Health Entries Collection
+    match /health_entries/{entryId} {
+      // Clients can read/write their own health entries
+      allow read, write: if isAuthenticated() && resource.data.clientId == request.auth.uid;
+      // Trainers can read their clients' health entries
+      allow read: if isAuthenticated() && isTrainer() && 
+        exists(/databases/{database}/documents/clients/{clientId}) && 
+        get(/databases/{database}/documents/clients/{clientId}).data.trainerId == request.auth.uid;
+    }
+    
+    // Courses Collection
+    match /courses/{courseId} {
+      // Trainers can create, read, and write their own courses
+      allow read, write: if isAuthenticated() && resource.data.trainerId == request.auth.uid;
+      // Clients can read courses if enrolled or from their trainer
+      allow read: if isAuthenticated() && 
+        (exists(/databases/{database}/documents/clients/{clientId}) && 
+         (clientId == request.auth.uid && 
+          resource.data.id in get(/databases/{database}/documents/clients/{clientId}).data.enrolledCourses));
+      // Clients can read courses from their assigned trainer
+      allow read: if isAuthenticated() && isClient() &&
+        exists(/databases/{database}/documents/clients/{clientId}) &&
+        get(/databases/{database}/documents/clients/{clientId}).data.trainerId == resource.data.trainerId;
+    }
+    
+    // Lessons (subcollection of Courses)
+    match /lessons/{lessonId} {
+      allow read: if true; // Lessons inherit course access rules
+    }
+    
+    // Posts Collection
+    match /posts/{postId} {
+      // Trainers can create, read, and write their own posts
+      allow create, read, write: if isAuthenticated() && resource.data.trainerId == request.auth.uid;
+      // Authenticated users can read posts
+      allow read: if isAuthenticated();
+    }
+    
+    // Messages (Community Chat)
+    match /messages/{messageId} {
+      // Anyone authenticated can read messages
+      allow read: if isAuthenticated();
+      // Users can write their own messages
+      allow create: if isAuthenticated() && request.resource.data.senderId == request.auth.uid;
+      // Users can delete/update their own messages
+      allow update, delete: if isAuthenticated() && resource.data.senderId == request.auth.uid;
+    }
+    
+    // Calendar Events Collection
+    match /calendar_events/{eventId} {
+      // Users can read/write their own events
+      allow read, write: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+  }
+}
